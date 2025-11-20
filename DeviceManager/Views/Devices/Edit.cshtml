@@ -1,0 +1,35 @@
+﻿@model DeviceManager.Models.Device
+
+@{
+    ViewData["Title"] = "Edit Device";
+}
+
+<div class="container py-5">
+    <h2>Edit Device</h2>
+    <p class="text-muted">Update the device details below.</p>
+
+    <form asp-action="Edit" method="post" class="mt-4">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Device Name</label>
+            <input asp-for="Name" class="form-control" placeholder="Enter device name" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Type" class="form-label">Device Type</label>
+            <input asp-for="Type" class="form-control" placeholder="Enter device type" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Status" class="form-label">Status</label>
+            <select asp-for="Status" class="form-select">
+                <option>Active</option>
+                <option>Inactive</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Device</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>

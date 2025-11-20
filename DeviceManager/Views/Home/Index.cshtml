@@ -1,0 +1,95 @@
+﻿<!-- Title and Description -->
+<div class="text-center mb-5">
+    <h1 class="display-4">Device Manager</h1>
+    <p class="lead">Monitor and manage all your devices with a quick overview of active and inactive statuses.</p>
+    <a class="btn btn-primary btn-lg" href="@Url.Action("Index", "Devices")">Go to Devices</a>
+</div>
+
+@model DeviceManager.Models.Dashboard
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">Dashboard</h2>
+
+    <div class="row mb-4">
+
+        <div class="col-md-4">
+            <div class="card shadow text-center p-3">
+                <h5>Total Devices</h5>
+                <h2>@Model.TotalDevices</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow text-center p-3">
+                <h5>Active</h5>
+                <h2 class="text-success">@Model.ActiveDevices</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow text-center p-3">
+                <h5>Inactive</h5>
+                <h2 class="text-danger">@Model.InactiveDevices</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    Recently Added
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentlyAdded.Count == 0)
+                    {
+                        <p>No devices found.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group">
+                            @foreach (var d in Model.RecentlyAdded)
+                            {
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>@d.Name (@d.Type)</span>
+                                    <span class="badge bg-secondary">@d.Status</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-danger text-white">
+                    Devices Needing Attention
+                </div>
+                <div class="card-body">
+                    @if (Model.AttentionNeeded.Count == 0)
+                    {
+                        <p>All devices are active.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group">
+                            @foreach (var d in Model.AttentionNeeded)
+                            {
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>@d.Name (@d.Type)</span>
+                                    <span class="badge bg-danger">Inactive</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
