@@ -11,5 +11,7 @@ namespace DeviceManager.Data
         }
 
         public DbSet<Device> Devices { get; set; }
+
+        public DbSet<Technician> Technicians { get; set; }
     }
 }
