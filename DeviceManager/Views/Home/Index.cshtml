@@ -1,106 +1,123 @@
 ﻿@model DeviceManager.Models.Dashboard
 
-<div class="container py-5">
+<div class="container py-4">
 
     <h2 class="mb-4">Dashboard</h2>
 
-    <!-- Top Metrics Cards -->
-    <div class="row g-3 mb-5">
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
+    <!-- Device Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary shadow-sm">
                 <div class="card-body">
                     <h5>Total Devices</h5>
                     <h3>@Model.TotalDevices</h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
+
+        <div class="col-md-4">
+            <div class="card text-white bg-success shadow-sm">
                 <div class="card-body">
-                    <h5>Active Devices</h5>
+                    <h5>Active</h5>
                     <h3>@Model.ActiveDevices</h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
+
+        <div class="col-md-4">
+            <div class="card text-white bg-danger shadow-sm">
                 <div class="card-body">
-                    <h5>Inactive Devices</h5>
+                    <h5>Inactive</h5>
                     <h3>@Model.InactiveDevices</h3>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recently Added Devices -->
-    <div class="mb-5">
-        <h4>Recently Added Devices</h4>
-        <table class="table table-hover shadow-sm">
-            <thead class="table-light">
-                <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var device in Model.RecentlyAdded)
-                {
+    <!-- Recently Added -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <strong>Recently Added Devices</strong>
+        </div>
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead class="table-light">
                     <tr>
-                        <td>@device.Name</td>
-                        <td>@device.Type</td>
-                        <td>@device.Status</td>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Technician</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.RecentlyAdded)
+                    {
+                        <tr>
+                            <td>@d.Name</td>
+                            <td>@d.Type</td>
+                            <td>@d.Status</td>
+                            <td>@(d.Technician?.FullName ?? "Unassigned")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Devices Needing Attention -->
-    <div class="mb-5">
-        <h4>Devices Needing Attention</h4>
-        <table class="table table-hover shadow-sm">
-            <thead class="table-light">
-                <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Technician</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var device in Model.AttentionNeeded)
-                {
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning">
+            <strong>Devices Needing Attention</strong>
+        </div>
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead class="table-light">
                     <tr>
-                        <td>@device.Name</td>
-                        <td>@device.Type</td>
-                        <td>@device.Status</td>
-                        <td>@(device.Technician?.FullName ?? "Unassigned")</td>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Technician</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.AttentionNeeded)
+                    {
+                        <tr>
+                            <td>@d.Name</td>
+                            <td>@d.Type</td>
+                            <td>@d.Status</td>
+                            <td>@(d.Technician?.FullName ?? "Unassigned")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Technician Workload -->
-    <div class="mb-5">
-        <h4>Technician Workload</h4>
-        <table class="table table-hover shadow-sm">
-            <thead class="table-light">
-                <tr>
-                    <th>Technician</th>
-                    <th>Assigned Devices</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var tech in Model.TechnicianWorkload)
-                {
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <strong>Technician Workload</strong>
+        </div>
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead class="table-light">
                     <tr>
-                        <td>@tech.TechnicianName</td>
-                        <td>@tech.AssignedDeviceCount</td>
+                        <th>Technician</th>
+                        <th>Assigned Devices</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.TechnicianWorkload)
+                    {
+                        <tr>
+                            <td>@t.TechnicianName</td>
+                            <td>@t.AssignedDeviceCount</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
+
 </div>

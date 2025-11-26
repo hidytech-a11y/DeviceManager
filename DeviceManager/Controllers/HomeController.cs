@@ -3,43 +3,46 @@ using DeviceManager.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-public class HomeController : Controller
+namespace DeviceManager.Controllers
 {
-    private readonly DeviceContext _context;
-
-    public HomeController(DeviceContext context)
+    public class HomeController : Controller
     {
-        _context = context;
-    }
+        private readonly DeviceContext _context;
 
-    public IActionResult Index()
-    {
-        // Existing dashboard data
-        var vm = new Dashboard
+        public HomeController(DeviceContext context)
         {
-            TotalDevices = _context.Devices.Count(),
-            ActiveDevices = _context.Devices.Count(d => d.Status == "Active"),
-            InactiveDevices = _context.Devices.Count(d => d.Status == "Inactive"),
+            _context = context;
+        }
 
-            RecentlyAdded = _context.Devices
-                .OrderByDescending(d => d.Id)
-                .Take(5)
-                .ToList(),
-
-            AttentionNeeded = _context.Devices
-                .Where(d => d.Status == "Inactive")
-                .ToList()
-        };
-
-        // Technician workload: number of devices assigned to each technician
-        vm.TechnicianWorkload = _context.Technicians
-            .Select(t => new TechnicianWorkload
+        public async Task<IActionResult> Index()
+        {
+            var dashboard = new Dashboard
             {
-                TechnicianName = t.FullName,
-                AssignedDeviceCount = t.Devices.Count
-            })
-            .ToList();
+                TotalDevices = await _context.Devices.CountAsync(),
+                ActiveDevices = await _context.Devices.CountAsync(d => d.Status == "Active"),
+                InactiveDevices = await _context.Devices.CountAsync(d => d.Status == "Inactive"),
 
-        return View(vm);
+                RecentlyAdded = await _context.Devices
+                    .Include(d => d.Technician)
+                    .OrderByDescending(d => d.Id)
+                    .Take(5)
+                    .ToListAsync(),
+
+                AttentionNeeded = await _context.Devices
+                    .Include(d => d.Technician)
+                    .Where(d => d.Status == "Inactive")
+                    .ToListAsync(),
+
+                TechnicianWorkload = await _context.Technicians
+                    .Select(t => new TechnicianWorkload
+                    {
+                        TechnicianName = t.FullName,
+                        AssignedDeviceCount = t.Devices.Count
+                    })
+                    .ToListAsync()
+            };
+
+            return View(dashboard);
+        }
     }
 }
