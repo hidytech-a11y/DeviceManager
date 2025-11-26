@@ -11,7 +11,7 @@
             <p><strong>Type:</strong> @Model.Type</p>
             <p><strong>Status:</strong> @Model.Status</p>
             <p><strong>Serial Number:</strong> @Model.SerialNumber</p>
-            <p><strong>Technician:</strong> @Model.Technician?.FullName ?? "Unassigned"</p>
+            <p><strong>Technician:</strong> @Model.Technician?.FullName</p>
 
             <div class="d-flex gap-2 mt-3">
                 <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">Edit</a>
