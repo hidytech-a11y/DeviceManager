@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeviceManager.Migrations
 {
     [DbContext(typeof(DeviceContext))]
-    [Migration("20251120114937_AddTechnicianUpdate")]
-    partial class AddTechnicianUpdate
+    [Migration("20251125112829_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,6 +27,10 @@ namespace DeviceManager.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerialNumber")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -55,12 +59,15 @@ namespace DeviceManager.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Expertise")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FullName")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -72,7 +79,8 @@ namespace DeviceManager.Migrations
                 {
                     b.HasOne("DeviceManager.Models.Technician", "Technician")
                         .WithMany("Devices")
-                        .HasForeignKey("TechnicianId");
+                        .HasForeignKey("TechnicianId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Technician");
                 });

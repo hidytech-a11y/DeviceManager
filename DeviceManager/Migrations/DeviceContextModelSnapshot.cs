@@ -27,6 +27,10 @@ namespace DeviceManager.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -52,12 +56,15 @@ namespace DeviceManager.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Expertise")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FullName")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -69,7 +76,8 @@ namespace DeviceManager.Migrations
                 {
                     b.HasOne("DeviceManager.Models.Technician", "Technician")
                         .WithMany("Devices")
-                        .HasForeignKey("TechnicianId");
+                        .HasForeignKey("TechnicianId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Technician");
                 });

@@ -3,11 +3,11 @@
     public class Technician
     {
         public int Id { get; set; }
-        public string? FullName { get; set; }
-        public string? Phone { get; set; }
-        public string? Expertise { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Expertise { get; set; } = string.Empty;
 
-        // REQUIRED — EF expects this because your controller uses it
-        public List<Device> Devices { get; set; } = new();
+
+        public ICollection<Device> Devices { get; set; } = new List<Device>();
     }
 }

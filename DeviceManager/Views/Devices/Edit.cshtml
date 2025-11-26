@@ -1,35 +1,56 @@
 ﻿@model DeviceManager.Models.Device
 
-@{
-    ViewData["Title"] = "Edit Device";
-}
 
-<div class="container py-5">
-    <h2>Edit Device</h2>
-    <p class="text-muted">Update the device details below.</p>
+<div class="container py-4">
+    <div class="card shadow-sm p-4 border-0">
+        <h3>Edit Device</h3>
 
-    <form asp-action="Edit" method="post" class="mt-4">
-        <input type="hidden" asp-for="Id" />
 
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label">Device Name</label>
-            <input asp-for="Name" class="form-control" placeholder="Enter device name" />
-        </div>
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
 
-        <div class="mb-3">
-            <label asp-for="Type" class="form-label">Device Type</label>
-            <input asp-for="Type" class="form-control" placeholder="Enter device type" />
-        </div>
 
-        <div class="mb-3">
-            <label asp-for="Status" class="form-label">Status</label>
-            <select asp-for="Status" class="form-select">
-                <option>Active</option>
-                <option>Inactive</option>
-            </select>
-        </div>
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
 
-        <button type="submit" class="btn btn-primary">Update Device</button>
-        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
-    </form>
+
+            <div class="mb-3">
+                <label asp-for="Type" class="form-label"></label>
+                <input asp-for="Type" class="form-control" />
+                <span asp-validation-for="Type" class="text-danger"></span>
+            </div>
+
+
+            <div class="mb-3">
+                <label asp-for="SerialNumber" class="form-label"></label>
+                <input asp-for="SerialNumber" class="form-control" />
+                <span asp-validation-for="SerialNumber" class="text-danger"></span>
+            </div>
+
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-select">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+
+
+            <div class="mb-3">
+                <label asp-for="TechnicianId" class="form-label"></label>
+                <select asp-for="TechnicianId" asp-items="ViewBag.Technicians" class="form-select">
+                    <option value="0">Unassigned</option>
+                </select>
+            </div>
+
+
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </div>
 </div>

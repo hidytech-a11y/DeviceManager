@@ -14,6 +14,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+        // Existing dashboard data
         var vm = new Dashboard
         {
             TotalDevices = _context.Devices.Count(),
@@ -29,6 +30,15 @@ public class HomeController : Controller
                 .Where(d => d.Status == "Inactive")
                 .ToList()
         };
+
+        // Technician workload: number of devices assigned to each technician
+        vm.TechnicianWorkload = _context.Technicians
+            .Select(t => new TechnicianWorkload
+            {
+                TechnicianName = t.FullName,
+                AssignedDeviceCount = t.Devices.Count
+            })
+            .ToList();
 
         return View(vm);
     }

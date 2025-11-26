@@ -13,5 +13,14 @@ namespace DeviceManager.Data
         public DbSet<Device> Devices { get; set; }
 
         public DbSet<Technician> Technicians { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Device>()
+                .HasOne(d => d.Technician)
+                .WithMany(t => t.Devices)
+                .HasForeignKey(d => d.TechnicianId)
+                .OnDelete(DeleteBehavior.SetNull);
+        }
     }
 }
