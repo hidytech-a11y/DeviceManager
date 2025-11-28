@@ -25,7 +25,7 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card text-white bg-danger shadow-sm">
+            <div class="card text-white bg-warning shadow-sm">
                 <div class="card-body">
                     <h5>Inactive</h5>
                     <h3>@Model.InactiveDevices</h3>
@@ -55,7 +55,16 @@
                         <tr>
                             <td>@d.Name</td>
                             <td>@d.Type</td>
-                            <td>@d.Status</td>
+                            <td>
+                                @if (d.Status == "Active")
+                                {
+                                    <span class="badge bg-success">@d.Status</span>
+                                }
+                                else if (d.Status == "Inactive")
+                                {
+                                    <span class="badge bg-warning text-dark">@d.Status</span>
+                                }
+                            </td>
                             <td>@(d.Technician?.FullName ?? "Unassigned")</td>
                         </tr>
                     }
@@ -66,7 +75,7 @@
 
     <!-- Devices Needing Attention -->
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-warning">
+        <div class="card-header text-white bg-danger">
             <strong>Devices Needing Attention</strong>
         </div>
         <div class="card-body p-0">
@@ -85,7 +94,16 @@
                         <tr>
                             <td>@d.Name</td>
                             <td>@d.Type</td>
-                            <td>@d.Status</td>
+                            <td>
+                                @if (d.Status == "Active")
+                                {
+                                    <span class="badge bg-success">@d.Status</span>
+                                }
+                                else if (d.Status == "Inactive")
+                                {
+                                    <span class="badge bg-warning text-dark">@d.Status</span>
+                                }
+                            </td>
                             <td>@(d.Technician?.FullName ?? "Unassigned")</td>
                         </tr>
                     }
