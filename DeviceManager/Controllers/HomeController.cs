@@ -5,14 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeviceManager.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(DeviceContext context) : Controller
     {
-        private readonly DeviceContext _context;
-
-        public HomeController(DeviceContext context)
-        {
-            _context = context;
-        }
+        private readonly DeviceContext _context = context;
 
         public async Task<IActionResult> Index()
         {
