@@ -20,5 +20,8 @@ namespace DeviceManager.Models
 
         public int? TechnicianId { get; set; }
         public Technician? Technician { get; set; }
+
+        public int? DeviceTypeId { get; set; }
+        public DeviceType? DeviceType { get; set; }
     }
 }

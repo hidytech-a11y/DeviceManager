@@ -27,7 +27,20 @@
                         {
                             <tr>
                                 <td>@d.Name</td>
-                                <td>@d.Type</td>
+                                <td>
+                                    @{
+                                        var typeName = d.DeviceType?.Name ?? "Unknown";
+                                        string icon = typeName.ToLower() switch
+                                        {
+                                            "phone" => "bi-phone",
+                                            "laptop" => "bi-laptop",
+                                            "printer" => "bi-printer",
+                                            _ => "bi-hdd-stack"
+                                        };
+                                    }
+                                    <i class="bi @icon me-1"></i> @typeName
+                                </td>
+
                                 <td>@d.SerialNumber</td>
                                 <td>
                                     @if (d.Status == "Active")
