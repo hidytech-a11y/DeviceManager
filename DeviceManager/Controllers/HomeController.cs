@@ -5,17 +5,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeviceManager.Controllers
 {
-    public class HomeController(DeviceContext context) : Controller
+    public class HomeController : Controller
     {
-        private readonly DeviceContext _context = context;
+        private readonly DeviceContext _context;
+
+        public HomeController(DeviceContext context)
+        {
+            _context = context;
+        }
 
         public async Task<IActionResult> Index()
         {
             var dashboard = new Dashboard
             {
                 TotalDevices = await _context.Devices.CountAsync(),
-                ActiveDevices = await _context.Devices.CountAsync(d => d.Status == "Active"),
-                InactiveDevices = await _context.Devices.CountAsync(d => d.Status == "Inactive"),
+
+                ActiveDevices = await _context.Devices
+                    .CountAsync(d => d.Status == "Active"),
+
+                InactiveDevices = await _context.Devices
+                    .CountAsync(d => d.Status == "Inactive"),
 
                 RecentlyAdded = await _context.Devices
                     .Include(d => d.Technician)

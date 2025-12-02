@@ -7,12 +7,17 @@ using Microsoft.Extensions.Logging;
 
 namespace DeviceManager.Controllers
 {
-    public class DevicesController(DeviceContext context, ILogger<DevicesController> logger) : Controller
+    public class DevicesController : Controller
     {
-        private readonly DeviceContext _context = context;
-        private readonly ILogger<DevicesController> _logger = logger;
+        private readonly DeviceContext _context;
+        private readonly ILogger<DevicesController> _logger;
 
-        // LIST
+        public DevicesController(DeviceContext context, ILogger<DevicesController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
         public async Task<IActionResult> Index()
         {
             var devices = await _context.Devices
@@ -23,19 +28,16 @@ namespace DeviceManager.Controllers
             return View(devices);
         }
 
-        // CREATE GET
         public IActionResult Create()
         {
             LoadDropdowns();
             return View();
         }
 
-        // CREATE POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Device device)
         {
-            // Important fix: Remove Required from manual "Type"
             ModelState.Remove("Type");
 
             if (!ModelState.IsValid)
@@ -65,7 +67,6 @@ namespace DeviceManager.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // EDIT GET
         public async Task<IActionResult> Edit(int id)
         {
             var device = await _context.Devices.FindAsync(id);
@@ -76,7 +77,6 @@ namespace DeviceManager.Controllers
             return View(device);
         }
 
-        // EDIT POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Device device)
@@ -97,7 +97,6 @@ namespace DeviceManager.Controllers
             existing.Name = device.Name;
             existing.SerialNumber = device.SerialNumber;
             existing.Status = device.Status;
-
             existing.DeviceTypeId = device.DeviceTypeId == 0 ? null : device.DeviceTypeId;
             existing.TechnicianId = device.TechnicianId == 0 ? null : device.TechnicianId;
 
@@ -116,7 +115,6 @@ namespace DeviceManager.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // DETAILS
         public async Task<IActionResult> Details(int id)
         {
             var device = await _context.Devices
@@ -130,7 +128,6 @@ namespace DeviceManager.Controllers
             return View(device);
         }
 
-        // DELETE GET
         public async Task<IActionResult> Delete(int id)
         {
             var device = await _context.Devices
@@ -144,7 +141,6 @@ namespace DeviceManager.Controllers
             return View(device);
         }
 
-        // DELETE POST
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -155,10 +151,10 @@ namespace DeviceManager.Controllers
                 _context.Devices.Remove(device);
                 await _context.SaveChangesAsync();
             }
+
             return RedirectToAction(nameof(Index));
         }
 
-        // HELPERS
         private void LoadDropdowns(int? selectedTech = null, int? selectedType = null)
         {
             ViewBag.Technicians = new SelectList(
