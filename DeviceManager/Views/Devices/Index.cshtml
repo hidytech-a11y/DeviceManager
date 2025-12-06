@@ -1,82 +1,137 @@
-﻿@model IEnumerable<DeviceManager.Models.Device>
+﻿@model DeviceManager.Models.DeviceListViewModel
 
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Devices</h2>
-        <a asp-action="Create" class="btn btn-success">
-            <i class="bi bi-plus-circle me-1"></i> Add Device
-        </a>
-    </div>
+<div class="container mt-4">
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Serial</th>
-                            <th>Status</th>
-                            <th>Technician</th>
-                            <th style="min-width: 220px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var d in Model)
-                        {
-                            <tr>
-                                <td>@d.Name</td>
-                                <td>
-                                    @{
-                                        var typeName = d.DeviceType?.Name ?? "Unknown";
-                                        string icon = typeName.ToLower() switch
-                                        {
-                                            "phone" => "bi-phone",
-                                            "laptop" => "bi-laptop",
-                                            "printer" => "bi-printer",
-                                            _ => "bi-hdd-stack"
-                                        };
-                                    }
-                                    <i class="bi @icon me-1"></i> @typeName
-                                </td>
-
-                                <td>@d.SerialNumber</td>
-                                <td>
-                                    @if (d.Status == "Active")
-                                    {
-                                        <span class="badge bg-success">@d.Status</span>
-                                    }
-                                    else if (d.Status == "Inactive")
-                                    {
-                                        <span class="badge bg-danger text-white">@d.Status</span>
-                                    }
-                                </td>
-                                <td>@(d.Technician != null ? d.Technician.FullName : "Unassigned")</td>
-
-                                <td>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <a asp-action="Details" asp-route-id="@d.Id"
-                                           class="btn btn-info btn-sm d-flex align-items-center">
-                                            <i class="bi bi-info-circle"></i>
-                                        </a>
-
-                                        <a asp-action="Edit" asp-route-id="@d.Id"
-                                           class="btn btn-primary btn-sm d-flex align-items-center">
-                                            <i class="bi bi-pen-fill"></i>
-                                        </a>
-
-                                        <a asp-action="Delete" asp-route-id="@d.Id"
-                                           class="btn btn-danger btn-sm d-flex align-items-center">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+    <!-- Dashboard Stats -->
+   @*  <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white p-3">
+                <h6>Total Devices</h6>
+                <h2>@Model.TotalDevices</h2>
             </div>
         </div>
+
+        <div class="col-md-4">
+            <div class="card bg-success text-white p-3">
+                <h6>Active</h6>
+                <h2>@Model.ActiveCount</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-danger text-white p-3">
+                <h6>Inactive</h6>
+                <h2>@Model.InactiveCount</h2>
+            </div>
+        </div>
+    </div> *@
+
+    <!-- Search + Filters -->
+    <form method="get" class="card p-3 shadow-sm mb-4">
+        <div class="row g-3">
+
+            <div class="col-md-3">
+                <input name="search" value="@Model.Search" class="form-control"
+                       placeholder="Search name or serial" />
+            </div>
+
+            <div class="col-md-3">
+                <select name="typeFilter" class="form-control">
+                    <option value="">All Types</option>
+                    <option value="Phone">Phone</option>
+                    <option value="Laptop">Laptop</option>
+                    <option value="Printer">Printer</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="statusFilter" class="form-control">
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="sortOrder" class="form-control">
+                    <option value="">Sort by Name</option>
+                    <option value="name_desc">Name Desc</option>
+                    <option value="type">Type</option>
+                    <option value="type_desc">Type Desc</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button class="btn btn-dark w-100">Apply</button>
+            </div>
+
+        </div>
+    </form>
+
+    <!-- Device Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Serial</th>
+                        <th>Status</th>
+                        <th>Technician</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.Devices)
+                    {
+                        <tr>
+                            <td>@d.Name</td>
+                            <td>@d.DeviceType?.Name</td>
+                            <td>@d.SerialNumber</td>
+                            <td>
+                                @if (d.Status == "Active")
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Inactive</span>
+                                }
+                            </td>
+                            <td>@(d.Technician?.FullName ?? "Unassigned")</td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@d.Id" class="btn btn-info btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@d.Id" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@d.Id" class="btn btn-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <!-- Pagination -->
+    <nav class="mt-3">
+        <ul class="pagination">
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link"
+                       href="?pageNumber=@i&search=@Model.Search&sortOrder=@Model.SortOrder&typeFilter=@Model.TypeFilter&statusFilter=@Model.StatusFilter">
+                        @i
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+
 </div>

@@ -32,13 +32,13 @@
                 <div class="collapse navbar-collapse" id="navMenu">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Dashboard</a>
+                            <a class="nav-link navbar-brand fw-bold" asp-controller="Home" asp-action="Index">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Devices" asp-action="Index">Devices</a>
+                            <a class="nav-link navbar-brand fw-bold" asp-controller="Devices" asp-action="Index">Devices</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Technician" asp-action="Index">Technicians</a>
+                            <a class="nav-link navbar-brand fw-bold" asp-controller="Technician" asp-action="Index">Technicians</a>
                         </li>
                     </ul>
 
@@ -72,7 +72,7 @@
 
     <footer class="border-top footer text-muted py-3">
         <div class="container text-center">
-            &copy; 2025 DeviceManager
+            &copy; @DateTime.Now.Year DeviceManager By Idris
         </div>
     </footer>
 

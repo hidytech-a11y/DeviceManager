@@ -7,26 +7,81 @@ using Microsoft.Extensions.Logging;
 
 namespace DeviceManager.Controllers
 {
-    public class DevicesController : Controller
+    public class DevicesController(DeviceContext context, ILogger<DevicesController> logger) : Controller
     {
-        private readonly DeviceContext _context;
-        private readonly ILogger<DevicesController> _logger;
+        private readonly DeviceContext _context = context;
+        private readonly ILogger<DevicesController> _logger = logger;
+        private const int PageSize = 10;
 
-        public DevicesController(DeviceContext context, ILogger<DevicesController> logger)
+        public async Task<IActionResult> Index(
+         string search,
+         string sortOrder,
+         string typeFilter,
+         string statusFilter,
+         int? technicianId,
+         int pageNumber = 1)
         {
-            _context = context;
-            _logger = logger;
-        }
-
-        public async Task<IActionResult> Index()
-        {
-            var devices = await _context.Devices
-                .Include(d => d.Technician)
+            var query = _context.Devices
                 .Include(d => d.DeviceType)
+                .Include(d => d.Technician)
+                .AsQueryable();
+
+            // Search
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(d =>
+                    d.Name.Contains(search) ||
+                    d.SerialNumber.Contains(search));
+            }
+
+            // Filters
+            if (!string.IsNullOrEmpty(typeFilter))
+                query = query.Where(d => d.DeviceType != null && d.DeviceType.Name == typeFilter);
+
+            if (!string.IsNullOrEmpty(statusFilter))
+                query = query.Where(d => d.Status == statusFilter);
+
+            if (technicianId.HasValue)
+                query = query.Where(d => d.TechnicianId == technicianId.Value);
+
+            // Sorting
+            query = sortOrder switch
+            {
+                "name_desc" => query.OrderByDescending(d => d.Name),
+                "type" => query.OrderBy(d => d.DeviceType != null ? d.DeviceType.Name : string.Empty),
+                "type_desc" => query.OrderByDescending(d => d.DeviceType != null ? d.DeviceType.Name : string.Empty),
+                _ => query.OrderBy(d => d.Name)
+            };
+
+            // Pagination
+            int totalDevices = await query.CountAsync();
+            var items = await query
+                .Skip((pageNumber - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
 
-            return View(devices);
+            // Build ViewModel
+            var vm = new DeviceListViewModel
+            {
+                Devices = items,
+                PageNumber = pageNumber,
+                TotalPages = (int)Math.Ceiling(totalDevices / (double)PageSize),
+
+                Search = search,
+                SortOrder = sortOrder,
+                TypeFilter = typeFilter,
+                StatusFilter = statusFilter,
+                TechnicianId = technicianId,
+
+                // Stats
+                TotalDevices = await _context.Devices.CountAsync(),
+                ActiveCount = await _context.Devices.CountAsync(d => d.Status == "Active"),
+                InactiveCount = await _context.Devices.CountAsync(d => d.Status == "Inactive")
+            };
+
+            return View(vm);
         }
+
 
         public IActionResult Create()
         {
