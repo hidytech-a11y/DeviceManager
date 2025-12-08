@@ -1,80 +1,94 @@
-using System;
-using Microsoft.EntityFrameworkCore;
 using DeviceManager.Data;
-using SQLitePCL;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Enable global authorization
-builder.Services.AddControllersWithViews(options =>
-{
-    options.Filters.Add(new AuthorizeFilter());
-});
-
-Batteries.Init();
-
-// App DB
+// Database
 builder.Services.AddDbContext<DeviceContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DeviceManager")));
-
-
 
 // Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
-    options.Password.RequireDigit = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireLowercase = false;
     options.Password.RequiredLength = 4;
+    options.Password.RequireDigit = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
 })
 .AddEntityFrameworkStores<DeviceContext>()
-.AddDefaultTokenProviders()
-.AddDefaultUI();
+.AddDefaultTokenProviders();
 
-// Cookie
-builder.Services.ConfigureApplicationCookie(options =>
+// MVC
+builder.Services.AddControllersWithViews(options =>
 {
-    // Use the custom LoginController instead of Identity UI login page
-    options.LoginPath = "/Account";
-    options.LogoutPath = "/Account/Logout";
-    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-
-    options.Cookie.Name = "DeviceManager.Identity.Cookie";
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-
-    options.ExpireTimeSpan = TimeSpan.FromDays(14);
-    options.SlidingExpiration = true;
-
-    options.ReturnUrlParameter = "returnUrl";
+    // Redirect unauthorized users
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter());
 });
 
 var app = builder.Build();
 
-// Pipeline
+// Middleware
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Route
+// RBAC seed
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+    string[] roles = { "Admin", "Manager", "Technician", "Viewer" };
+
+    foreach (var role in roles)
+    {
+        var exists = await roleManager.RoleExistsAsync(role);
+        if (!exists)
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+
+    // Default admin
+    string adminEmail = "admin@local.dev";
+    string adminPassword = "Admin1234";
+
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
+    if (adminUser == null)
+    {
+        var newAdmin = new IdentityUser
+        {
+            Email = adminEmail,
+            UserName = adminEmail,
+            EmailConfirmed = true
+        };
+
+        var createUser = await userManager.CreateAsync(newAdmin, adminPassword);
+
+        if (createUser.Succeeded)
+        {
+            await userManager.AddToRoleAsync(newAdmin, "Admin");
+        }
+    }
+}
+
+// Routing
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
+    name: "accessDenied",
+    pattern: "Account/AccessDenied",
+    defaults: new { controller = "Account", action = "AccessDenied" });
 
 app.Run();

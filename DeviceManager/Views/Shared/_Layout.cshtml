@@ -6,62 +6,124 @@
 <head>
     <title>Device Manager</title>
     <link rel="stylesheet" href="~/css/site.css">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DeviceManager.styles.css" asp-append-version="true" />
 </head>
+
 <body>
 
     <nav class="top-nav"></nav>
 
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm mb-3">
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom mb-3">
             <div class="container">
 
-                <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-hdd-network"></i> DeviceManager
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    DeviceManager
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="collapse navbar-collapse" id="navMenu">
+                <div class="collapse navbar-collapse" id="mainNav">
+
                     <ul class="navbar-nav me-auto">
+
                         <li class="nav-item">
-                            <a class="nav-link navbar-brand fw-bold" asp-controller="Home" asp-action="Index">Dashboard</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link navbar-brand fw-bold" asp-controller="Devices" asp-action="Index">Devices</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link navbar-brand fw-bold" asp-controller="Technician" asp-action="Index">Technicians</a>
-                        </li>
+
+                        @* All signed-in users *@
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Devices" asp-action="Index">Devices</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Technician" asp-action="Index">Technicians</a>
+                            </li>
+
+                            @* Admin menu *@
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="AdminDashboard" asp-action="Index">Admin</a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Users" asp-action="Index">Users</a>
+                                </li>
+                            }
+
+                            @* Manager menu *@
+                            @if (User.IsInRole("Manager"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Approvals" asp-action="Index">Approvals</a>
+                                </li>
+                            }
+
+                            @* Technician menu *@
+                            @if (User.IsInRole("Technician"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Devices" asp-action="Assigned">
+                                        My Tasks
+                                    </a>
+                                </li>
+                            }
+
+                            @* Viewer menu *@
+                            @if (User.IsInRole("Viewer"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Reports" asp-action="Index">Reports</a>
+                                </li>
+                            }
+                        }
                     </ul>
 
-                    @if (User.Identity?.IsAuthenticated == true)
-                    {
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="fw-bold">Hello @User.Identity.Name</span>
+                    <ul class="navbar-nav">
 
-                            <form method="post" asp-controller="Account" asp-action="logout" class="m-0 p-0">
-                                <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
-                            </form>
-                        </div>
-                    }
-                   @*  else
-                    {
-                        <a class="btn btn-primary btn-sm" asp-area="Identity" asp-page="/Account/Login">Login</a>
-                    } *@
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            var user = await UserManager.GetUserAsync(User);
+
+                            <li class="nav-item me-3">
+                                <span class="navbar-text fw-semibold">
+                                    @user.Email
+                                </span>
+                            </li>
+
+                            <li class="nav-item">
+                                <form method="post" asp-controller="Account" asp-action="Logout">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link nav-link p-0">
+                                        Logout
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Index">Login</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Register">Register</a>
+                            </li>
+                        }
+                    </ul>
+
                 </div>
-
             </div>
         </nav>
     </header>
-
 
     <div class="container">
         <main class="pb-3">
@@ -69,13 +131,11 @@
         </main>
     </div>
 
-
     <footer class="border-top footer text-muted py-3">
         <div class="container text-center">
             &copy; @DateTime.Now.Year DeviceManager By Idris
         </div>
     </footer>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -2,9 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using DeviceManager.Data;
 using DeviceManager.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DeviceManager.Controllers
 {
+    [Authorize(Roles = "Admin,Manager,Viewer")]
     public class TechnicianController : Controller
     {
         private readonly DeviceContext _context;
@@ -22,6 +24,8 @@ namespace DeviceManager.Controllers
         }
 
         // GET: Technician/Create
+
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
@@ -41,6 +45,7 @@ namespace DeviceManager.Controllers
         }
 
         // GET: Technician/Edit/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             var tech = await _context.Technicians.FindAsync(id);
@@ -49,6 +54,7 @@ namespace DeviceManager.Controllers
         }
 
         // POST: Technician/Edit/5
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Technician t)
@@ -62,6 +68,8 @@ namespace DeviceManager.Controllers
         }
 
         // GET: Technician/Details/5
+
+        [Authorize(Roles = "Admin,Manager,Viewer")]
         public async Task<IActionResult> Details(int id)
         {
             var tech = await _context.Technicians
@@ -72,6 +80,7 @@ namespace DeviceManager.Controllers
         }
 
         // GET: Technician/Delete/5
+        [Authorize(Roles ="Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var tech = await _context.Technicians.FindAsync(id);
@@ -80,6 +89,7 @@ namespace DeviceManager.Controllers
         }
 
         // POST: Technician/Delete/5
+        [Authorize(Roles = "Admin")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

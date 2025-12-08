@@ -2,6 +2,16 @@
 
 <div class="container mt-4">
 
+    <!-- Page header with Create button -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Devices</h3>
+
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Create" class="btn btn-success">Create Device</a>
+        }
+    </div>
+
     <!-- Dashboard Stats -->
    @*  <div class="row g-3 mb-4">
         <div class="col-md-4">
@@ -55,6 +65,7 @@
             <div class="col-md-2">
                 <select name="sortOrder" class="form-control">
                     <option value="">Sort by Name</option>
+                    <option value="DateTime">Sort By Date</option>
                     <option value="name_desc">Name Desc</option>
                     <option value="type">Type</option>
                     <option value="type_desc">Type Desc</option>
@@ -104,12 +115,22 @@
                                 <a asp-action="Details" asp-route-id="@d.Id" class="btn btn-info btn-sm">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a asp-action="Edit" asp-route-id="@d.Id" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@d.Id" class="btn btn-danger btn-sm">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@d.Id" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                }
+
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <a asp-action="Delete" asp-route-id="@d.Id" class="btn btn-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                }
+
+                                
                             </td>
                         </tr>
                     }

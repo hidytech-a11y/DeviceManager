@@ -6,112 +6,107 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DeviceManager.Controllers
 {
-    [AllowAnonymous] // global AuthorizeFilter is enabled; allow anonymous for login/register
-    public class AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager) : Controller
+    public sealed class AccountController : Controller
     {
-        private readonly SignInManager<IdentityUser> _signInManager = signInManager;
-        private readonly UserManager<IdentityUser> _userManager = userManager;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        // GET: /Login
-        [HttpGet]
-        public IActionResult Index(string? returnUrl = null)
+        public AccountController(
+            UserManager<IdentityUser> userManager,
+            SignInManager<IdentityUser> signInManager,
+            RoleManager<IdentityRole> roleManager)
         {
-            var model = new LoginViewModel { ReturnUrl = returnUrl };
-            return View(model);
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _roleManager = roleManager;
         }
 
-        // POST: /Login
+        // GET: /Account/Login
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        // POST: /Account/Login
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index(LoginViewModel model)
+        public async Task<IActionResult> Login(string email, string password)
         {
             if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+                return View();
 
-            // Find user by email (identity user names equal emails in this app)
-            var user = await _userManager.FindByEmailAsync(email: model.Email ?? string.Empty);
-            if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                return View(model);
-            }
+            var result = await _signInManager.PasswordSignInAsync(email, password, true, false);
 
-            var userName = user.UserName ?? string.Empty;
-            var password = model.Password ?? string.Empty;
-            var result = await _signInManager.PasswordSignInAsync(userName, password, model.RememberMe, lockoutOnFailure: false);
             if (result.Succeeded)
-            {
-                if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-                {
-                    return Redirect(model.ReturnUrl);
-                }
-
                 return RedirectToAction("Index", "Home");
-            }
 
-            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-            return View(model);
+            ModelState.AddModelError("", "Invalid login details");
+            return View();
         }
 
-        // GET: /Login/Register
+        // GET: /Account/Register
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Register()
         {
             return View(new RegisterViewModel());
         }
 
-        // POST: /Login/Register
+        // POST: /Account/Register
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
-            var password = model.Password ?? string.Empty;
-            var user = new IdentityUser { UserName = model.Email, Email = model.Email };
-            var result = await _userManager.CreateAsync(user, password: password);
-
-            if (!result.Succeeded)
+            var user = new IdentityUser
             {
-                foreach (var err in result.Errors)
+                UserName = model.Email,
+                Email = model.Email
+            };
+
+            var createUser = await _userManager.CreateAsync(user, model.Password);
+
+            if (createUser.Succeeded)
+            {
+                var roleExists = await _roleManager.RoleExistsAsync(model.Role);
+                if (!roleExists)
                 {
-                    ModelState.AddModelError(string.Empty, err.Description);
+                    await _roleManager.CreateAsync(new IdentityRole(model.Role));
                 }
-                return View(model);
+
+                await _userManager.AddToRoleAsync(user, model.Role);
+
+                return RedirectToAction("Login");
             }
 
-            // sign in the newly created user
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return RedirectToAction("Index", "Home");
+            foreach (var error in createUser.Errors)
+                ModelState.AddModelError("", error.Description);
+
+            return View(model);
         }
 
-        // POST: /Login/Logout (form POST, non-AJAX)
+        // POST: /Account/Logout
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            return RedirectToAction("Index", "Account");
+            return RedirectToAction("Login");
         }
 
-        // POST: /Acount/LogoutAjax
-        // Handles AJAX logout: expects antiforgery token header and returns JSON
-        [HttpPost]
-        [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LogoutAjax()
+        // GET: /Account/AccessDenied
+        [HttpGet]
+        public IActionResult AccessDenied()
         {
-            await _signInManager.SignOutAsync();
-
-            // return a JSON payload so the client script can redirect or update UI
-            var redirectUrl = Url.Action("Index", "Account") ?? "/";
-            return Json(new { success = true, redirectUrl });
+            return View();
         }
     }
 }
