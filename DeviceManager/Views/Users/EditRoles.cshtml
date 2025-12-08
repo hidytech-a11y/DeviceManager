@@ -1,0 +1,37 @@
+﻿@model DeviceManager.Models.EditUserRolesViewModel
+
+@{
+    ViewData["Title"] = "Edit User Roles";
+}
+
+<h2>Edit Roles for @Model.Email</h2>
+
+<form asp-action="EditRoles" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="UserId" />
+
+@* 
+    <div class="mb-3">
+        <label>Email</label>
+        <input asp-for="Email" class="form-control" readonly />
+    </div> *@
+
+    <h4>Roles</h4>
+
+    <div class="mb-3">
+        @for (int i =0; i < Model.Roles.Count; i++)
+        {
+            <div>
+                <input type="checkbox" asp-for="Roles[i].Selected" />
+
+                <label>@Model.Roles[i].RoleName</label>
+                <input type="hidden" asp-for="Roles[i].RoleName" />
+
+            </div>
+       
+        }
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>

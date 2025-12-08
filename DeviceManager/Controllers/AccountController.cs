@@ -6,21 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DeviceManager.Controllers
 {
-    public sealed class AccountController : Controller
+    public sealed class AccountController(
+        UserManager<IdentityUser> userManager,
+        SignInManager<IdentityUser> signInManager,
+        RoleManager<IdentityRole> roleManager) : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-
-        public AccountController(
-            UserManager<IdentityUser> userManager,
-            SignInManager<IdentityUser> signInManager,
-            RoleManager<IdentityRole> roleManager)
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _roleManager = roleManager;
-        }
+        private readonly UserManager<IdentityUser> _userManager = userManager;
+        private readonly SignInManager<IdentityUser> _signInManager = signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager = roleManager;
 
         // GET: /Account/Login
         [HttpGet]

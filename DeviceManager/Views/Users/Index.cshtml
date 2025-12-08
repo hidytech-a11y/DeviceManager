@@ -1,0 +1,29 @@
+﻿@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityUser>
+
+    @{
+    ViewData["Title"] = "Users";
+}
+<h2 class="fw-bold">Users</h2>
+<a asp-action="Create" class="btn btn-primary mb-3">Create User</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Email</td>
+                <td>
+                    <a asp-action="EditRoles" asp-route-id="@user.Id" class="btn btn-sm btn-warning">Role</a>
+                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
