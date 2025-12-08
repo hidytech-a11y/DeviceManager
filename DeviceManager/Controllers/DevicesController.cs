@@ -14,22 +14,15 @@ namespace DeviceManager.Controllers
 {
     // Require authentication for controller; per-action roles configured below.
     [Authorize]
-    public class DevicesController : Controller
+    public class DevicesController(
+        DeviceContext context,
+        ILogger<DevicesController> logger,
+        UserManager<IdentityUser> userManager) : Controller
     {
-        private readonly DeviceContext _context;
-        private readonly ILogger<DevicesController> _logger;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly DeviceContext _context = context;
+        private readonly ILogger<DevicesController> _logger = logger;
+        private readonly UserManager<IdentityUser> _userManager = userManager;
         private const int PageSize = 10;
-
-        public DevicesController(
-            DeviceContext context,
-            ILogger<DevicesController> logger,
-            UserManager<IdentityUser> userManager)
-        {
-            _context = context;
-            _logger = logger;
-            _userManager = userManager;
-        }
 
         // LIST: Admin, Technician, Viewer can access list (content may be filtered for Technician)
         [Authorize(Roles = "Admin,Technician,Viewer")]

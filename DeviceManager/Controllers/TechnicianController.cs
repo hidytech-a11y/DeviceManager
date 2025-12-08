@@ -7,14 +7,9 @@ using Microsoft.AspNetCore.Authorization;
 namespace DeviceManager.Controllers
 {
     [Authorize(Roles = "Admin,Manager,Viewer")]
-    public class TechnicianController : Controller
+    public class TechnicianController(DeviceContext context) : Controller
     {
-        private readonly DeviceContext _context;
-
-        public TechnicianController(DeviceContext context)
-        {
-            _context = context;
-        }
+        private readonly DeviceContext _context = context;
 
         // GET: Technician
         public async Task<IActionResult> Index()

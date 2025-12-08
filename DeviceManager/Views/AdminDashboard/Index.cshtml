@@ -1,0 +1,47 @@
+﻿@model DeviceManager.Models.AdminDashboardViewModel
+
+<div class="container mt-5">
+
+    <h2 class="fw-bold mb-4">Admin Dashboard</h2>
+
+    <div class="row g-4">
+
+
+        <div class="col-md-3">
+            <div class="card border shadow-sm text-center p-3">
+                <h4 class="fw-bold">@Model.UserCount</h4>
+                <p class="text-muted">Users</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border shadow-sm text-center p-3">
+                <h4 class="fw-bold">@Model.DeviceCount</h4>
+                <p class="text-muted">Devices</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border shadow-sm text-center p-3">
+                <h4 class="fw-bold">@Model.TechnicianCount</h4>
+                <p class="text-muted">Technicians</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border shadow-sm text-center p-3">
+                <h4 class="fw-bold">@Model.ManagerCount</h4>
+                <p class="text-muted">Managers</p>
+            </div>
+        </div>
+        
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="d-flex gap-3">
+        <a asp-controller="Account" asp-action="Register" class="btn btn-primary">Manage User</a>
+        <a asp-controller="Devices" asp-action="Index" class="btn btn-secondary">Manage Roles</a>
+    </div>
+
+</div>
