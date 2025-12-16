@@ -46,12 +46,15 @@
             </div>
 
             <div class="col-md-3">
-                <select name="typeFilter" class="form-control">
-                    <option value="">All Types</option>
-                    <option value="Phone">Phone</option>
-                    <option value="Laptop">Laptop</option>
-                    <option value="Printer">Printer</option>
+               <select name="typeFilter" class="form-control"> <option value="">All Types</option>
+                    @foreach (var t in (IEnumerable<DeviceType>)ViewBag.AvailableTypes)
+                    {
+                        <option value="@t.Name" selected="@(Model.TypeFilter == t.Name)">
+                            @t.Name
+                        </option>
+                    }
                 </select>
+
             </div>
 
             <div class="col-md-2">

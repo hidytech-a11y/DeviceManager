@@ -42,48 +42,89 @@ namespace DeviceManager.Controllers
         }
 
         // GET: /Account/Register
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Register()
+
+        //[Authorize(Roles = "Admin")]
+        //[HttpGet]
+        //[AllowAnonymous]
+        //public IActionResult Register()
+        //{
+        //    return View(new RegisterViewModel());
+        //}
+
+        //// POST: /Account/Register
+        //[Authorize(Roles = "Admin")]    
+        //[HttpPost]
+        //[AllowAnonymous]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Register(RegisterViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //        return View(model);
+
+        //    var user = new IdentityUser
+        //    {
+        //        UserName = model.Email,
+        //        Email = model.Email
+        //    };
+
+        //    var createUser = await _userManager.CreateAsync(user, model.Password);
+
+        //    if (createUser.Succeeded)
+        //    {
+        //        var roleExists = await _roleManager.RoleExistsAsync(model.Role);
+        //        if (!roleExists)
+        //        {
+        //            await _roleManager.CreateAsync(new IdentityRole(model.Role));
+        //        }
+
+        //        await _userManager.AddToRoleAsync(user, model.Role);
+
+        //        return RedirectToAction("Login");
+        //    }
+
+        //    foreach (var error in createUser.Errors)
+        //        ModelState.AddModelError("", error.Description);
+
+        //    return View(model);
+        //}
+
+        //User Password Reset, Profile Management etc. can be added here
+        [Authorize]
+        public IActionResult ChangePassword()
         {
-            return View(new RegisterViewModel());
+            return View();
         }
 
-        // POST: /Account/Register
+        [Authorize]
         [HttpPost]
-        [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user = new IdentityUser
-            {
-                UserName = model.Email,
-                Email = model.Email
-            };
-
-            var createUser = await _userManager.CreateAsync(user, model.Password);
-
-            if (createUser.Succeeded)
-            {
-                var roleExists = await _roleManager.RoleExistsAsync(model.Role);
-                if (!roleExists)
-                {
-                    await _roleManager.CreateAsync(new IdentityRole(model.Role));
-                }
-
-                await _userManager.AddToRoleAsync(user, model.Role);
-
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
                 return RedirectToAction("Login");
+
+            var result = await _userManager.ChangePasswordAsync(
+                user,
+                model.CurrentPassword,
+                model.NewPassword
+            );
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError("", error.Description);
+
+                return View(model);
             }
 
-            foreach (var error in createUser.Errors)
-                ModelState.AddModelError("", error.Description);
-
-            return View(model);
+            await _signInManager.RefreshSignInAsync(user);
+            return RedirectToAction("Index", "Home");
         }
+
 
         // POST: /Account/Logout
         [HttpPost]

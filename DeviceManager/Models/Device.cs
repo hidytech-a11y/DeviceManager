@@ -1,5 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+
+
+
+
 namespace DeviceManager.Models
 {
     public class Device
@@ -8,9 +12,6 @@ namespace DeviceManager.Models
 
         [Required]
         public string Name { get; set; } = string.Empty;
-
-        [Required]
-        public string Type { get; set; } = string.Empty;
 
         [Required]
         public string SerialNumber { get; set; } = string.Empty;
@@ -24,4 +25,6 @@ namespace DeviceManager.Models
         public int? DeviceTypeId { get; set; }
         public DeviceType? DeviceType { get; set; }
     }
+
 }
+

@@ -1,0 +1,44 @@
+﻿@model IEnumerable<DeviceManager.Models.Device>
+
+@{
+    ViewData["Title"] = "My Tasks";
+}
+
+<div class="container py-5">
+    <h2>My Assigned Devices</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-3">
+            No devices assigned.
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Serial Number</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    <tr>
+                        <td>@d.Name</td>
+                        <td>@d.SerialNumber</td>
+                        <td>@d.DeviceType?.Name</td>
+                        <td>@d.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-3">
+        Back
+    </a>
+</div>

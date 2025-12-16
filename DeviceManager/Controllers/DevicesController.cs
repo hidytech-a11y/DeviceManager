@@ -25,7 +25,7 @@ namespace DeviceManager.Controllers
         private const int PageSize = 10;
 
         // LIST: Admin, Technician, Viewer can access list (content may be filtered for Technician)
-        [Authorize(Roles = "Admin,Technician,Viewer")]
+        [Authorize(Roles = "Admin,Technician,Viewer,Manager")]
         public async Task<IActionResult> Index(
             string search,
             string sortOrder,
@@ -39,18 +39,22 @@ namespace DeviceManager.Controllers
                 .Include(d => d.Technician)
                 .AsQueryable();
 
-            // Technician user: optionally filter to assigned devices only.
-            // NOTE: to enable exact filtering you should map IdentityUser -> Technician.
-            // See comment below for how to wire Technician.UserId and use the snippet.
-            if (User.IsInRole("Technician"))
+           if (User.IsInRole("Technician"))
             {
-                // Attempt simple fallback: if technicianId was provided in query, use it.
-                // Otherwise show all devices (safe default).
-                if (technicianId.HasValue)
-                    query = query.Where(d => d.TechnicianId == technicianId.Value);
+                var user = await _userManager.GetUserAsync(User);
 
-                // If you add a mapping between Identity user and Technician (recommended),
-                // replace the above with the commented snippet further down.
+                var tech = await _context.Technicians
+                .FirstOrDefaultAsync(t => t.IdentityUserId == user.Id);
+
+                if (tech != null)
+                {
+                    query = query.Where(d => d.TechnicianId == tech.Id);
+                }
+                else
+                {
+                    query = query.Where(d => false);
+                }
+
             }
 
             // Search
@@ -209,7 +213,7 @@ namespace DeviceManager.Controllers
         }
 
         // DETAILS: Admin, Technician, Viewer
-        [Authorize(Roles = "Admin,Technician,Viewer")]
+        [Authorize(Roles = "Admin,Technician,Viewer,Manager")]
         public async Task<IActionResult> Details(int id)
         {
             var device = await _context.Devices
@@ -283,33 +287,5 @@ namespace DeviceManager.Controllers
                 }
             }
         }
-
-        /*
-         * If you want Technicians to see ONLY devices assigned to them, add a link between the Identity user
-         * and the Technician entity. Recommended approach:
-         *
-         * 1) Add a column to Technician model, e.g. public string? IdentityUserId { get; set; }
-         * 2) When Admin creates a Technician, create a corresponding IdentityUser (or map an existing one)
-         *    and set Technician.IdentityUserId = createdUser.Id
-         * 3) Add a DB migration to persist that column.
-         *
-         * Then uncomment and use this snippet in the Index action (replace the fallback filtering above):
-         *
-         * // var identityUser = await _userManager.GetUserAsync(User);
-         * // if (User.IsInRole("Technician") && identityUser != null)
-         * // {
-         * //     var tech = await _context.Technicians.FirstOrDefaultAsync(t => t.IdentityUserId == identityUser.Id);
-         * //     if (tech != null)
-         * //     {
-         * //         query = query.Where(d => d.TechnicianId == tech.Id);
-         * //     }
-         * //     else
-         * //     {
-         * //         // no matching Technician record => show none
-         * //         query = query.Where(d => false);
-         * //     }
-         * // }
-         *
-         */
     }
 }

@@ -20,9 +20,7 @@
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom mb-3">
             <div class="container">
 
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                    DeviceManager
-                </a>
+                <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">SDM</a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
                     <span class="navbar-toggler-icon"></span>
@@ -33,29 +31,29 @@
                     <ul class="navbar-nav me-auto">
 
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link fw-semibold" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
                         @* All signed-in users *@
                         @if (SignInManager.IsSignedIn(User))
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Devices" asp-action="Index">Devices</a>
+                                <a class="nav-link fw-semibold" asp-controller="Devices" asp-action="Index">Devices</a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Technician" asp-action="Index">Technicians</a>
+                                <a class="nav-link fw-semibold" asp-controller="Technician" asp-action="Index">Technicians</a>
                             </li>
 
                             @* Admin menu *@
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="AdminDashboard" asp-action="Index">Admin</a>
+                                    <a class="nav-link fw-semibold" asp-controller="AdminDashboard" asp-action="Index">Admin</a>
                                 </li>
 
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Users" asp-action="Index">Users</a>
+                                    <a class="nav-link fw-semibold" asp-controller="Users" asp-action="Index">Users</a>
                                 </li>
                             }
 
@@ -63,7 +61,7 @@
                             @if (User.IsInRole("Manager"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Approvals" asp-action="Index">Approvals</a>
+                                    <a class="nav-link fw-semibold" asp-controller="Approvals" asp-action="Index">Approvals</a>
                                 </li>
                             }
 
@@ -71,9 +69,7 @@
                             @if (User.IsInRole("Technician"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Devices" asp-action="Assigned">
-                                        My Tasks
-                                    </a>
+                                    <a class="nav-link fw-semibold" asp-controller="Technician" asp-action="MyTasks">My Tasks</a>
                                 </li>
                             }
 
@@ -81,7 +77,14 @@
                             @if (User.IsInRole("Viewer"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Reports" asp-action="Index">Reports</a>
+                                    <a class="nav-link fw-semibold" asp-controller="Reports" asp-action="Index">Reports</a>
+                                </li>
+                            }
+
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link  fw-semibold" asp-controller="Account" asp-action="ChangePassword"> Change Password</a>
                                 </li>
                             }
                         }
@@ -111,12 +114,12 @@
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Index">Login</a>
+                                <a class="nav-link fw-semibold" asp-controller="Account" asp-action="Index">Login</a>
                             </li>
 
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Register">Register</a>
-                            </li>
+                           @*  <li class="nav-item">
+                                <a class="nav-link fw-semibold" asp-controller="Account" asp-action="Register">Register</a>
+                            </li> *@
                         }
                     </ul>
 
@@ -132,7 +135,7 @@
     </div>
 
     <footer class="border-top footer text-muted py-3">
-        <div class="container text-center">
+        <div class="container text-center fw-semibold">
             &copy; @DateTime.Now.Year DeviceManager By Idris
         </div>
     </footer>

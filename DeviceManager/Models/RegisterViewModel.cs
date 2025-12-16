@@ -21,5 +21,10 @@ namespace DeviceManager.Models
         [Required]
         [Display(Name = "Role")]
         public string? Role { get; set; }
+
+        public string? FullName { get; set; }
+        public string? Phone { get; set; }
+        public string? Expertise { get; set; }
+
     }
 }

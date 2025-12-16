@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using DeviceManager.Models;
 using Microsoft.EntityFrameworkCore;
 using DeviceManager.Data;
+using SQLitePCL;
 
 namespace DeviceManager.Controllers
 {

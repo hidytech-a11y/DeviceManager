@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿
 
 namespace DeviceManager.Models
 {
     public class DeviceListViewModel
     {
+
         public IEnumerable<Device> Devices { get; set; } = [];
 
         public int PageNumber { get; set; }
@@ -15,9 +16,9 @@ namespace DeviceManager.Models
         public string StatusFilter { get; set; } = "";
         public int? TechnicianId { get; set; }
 
-        // Stats
         public int TotalDevices { get; set; }
         public int ActiveCount { get; set; }
         public int InactiveCount { get; set; }
     }
 }
+
