@@ -2,38 +2,52 @@
 
 @{
     ViewData["Title"] = "Login";
+    Layout = "_Layout";
 }
 
-<h2>@ViewData["Title"]</h2>
+<div class="auth-wrapper">
+    <div class="auth-card">
 
-<form asp-action="Login" asp-controller="Account" method="post" class="form-horizontal" novalidate>
-    @Html.AntiForgeryToken()
+        <!-- LEFT: LOGIN FORM -->
+        <div class="auth-form">
+            <h2 class="auth-title">Sign In</h2>
 
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <form asp-action="Login" asp-controller="Account" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <input asp-for="ReturnUrl" type="hidden" />
 
-    @* Preserve returnUrl passed by the middleware (if any) *@
-    <input asp-for="ReturnUrl" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
+                <div class="mb-3">
+                    <input asp-for="Email" class="form-control auth-input" placeholder="Email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <input asp-for="Password" class="form-control auth-input" placeholder="Password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-3 text-start">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
+                </div>
+
+                <button type="submit" class="btn auth-btn w-100">Login</button>
+            </form>
+        </div>
+
+        <!-- RIGHT: CTA PANEL -->
+        <div class="auth-panel auth-brand">
+            <img src="~/images/logo01.svg" alt="Device Manager Logo" class="auth-logo" />
+
+            <h3>Simple Device Manager</h3>
+            <p>Secure internal access portal</p>
+        </div>
+
+
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-
-    <div class="form-check mb-3">
-        <input asp-for="RememberMe" class="form-check-input" />
-        <label asp-for="RememberMe" class="form-check-label"></label>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Log in</button>
-   @*  <a asp-action="Register" asp-controller="Account" class="btn btn-link">Register</a> *@
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
