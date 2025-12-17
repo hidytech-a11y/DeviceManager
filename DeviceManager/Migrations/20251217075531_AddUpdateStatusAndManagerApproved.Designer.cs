@@ -3,6 +3,7 @@ using System;
 using DeviceManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeviceManager.Migrations
 {
     [DbContext(typeof(DeviceContext))]
-    partial class DeviceContextModelSnapshot : ModelSnapshot
+    [Migration("20251217075531_AddUpdateStatusAndManagerApproved")]
+    partial class AddUpdateStatusAndManagerApproved
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
@@ -35,7 +38,7 @@ namespace DeviceManager.Migrations
                     b.Property<int?>("DeviceTypeId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsApprovedByManager")
+                    b.Property<bool>("IsApprovalByManager")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

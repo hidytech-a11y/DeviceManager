@@ -215,5 +215,31 @@ namespace DeviceManager.Controllers
 
             return View(devices);
         }
+
+        [Authorize(Roles ="technician")]
+        [HttpPost]
+
+        public async Task<IActionResult> UpdateStatus(int id, string status)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            var technician = await _context.Technicians
+                .FirstOrDefaultAsync(t => t.IdentityUserId == userId);
+
+            if (technician == null)
+                return Unauthorized();
+
+            var device = await _context.Devices
+                .FirstOrDefaultAsync(d => d.Id == id && d.TechnicianId == technician.Id);
+
+            if (device == null)
+                return NotFound();
+
+            device.WorkStatus = status;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(MyTasks));
+
+        }
     }
 }

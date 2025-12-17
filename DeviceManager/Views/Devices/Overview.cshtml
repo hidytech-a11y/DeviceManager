@@ -1,0 +1,43 @@
+﻿@model DeviceManager.Models.AdminOverviewViewModel
+
+<div class="container py-5">
+    <h2>Admin Overview</h2>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card p-3">
+                <h6>Total Devices</h6>
+                <h3>@Model.TotalDevices</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <h6>Assigned</h6>
+                <h3>@Model.AssignedDevices</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <h6>In Progress</h6>
+                <h3>@Model.InProgress</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <h6>Pending Approval</h6>
+                <h3>@Model.PendingApproval</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3 mt-3">
+            <div class="card p-3">
+                <h6>Approved</h6>
+                <h3>@Model.Approved</h3>
+            </div>
+        </div>
+    </div>
+
+</div>

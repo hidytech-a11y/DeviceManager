@@ -1,21 +1,37 @@
 ﻿@model DeviceManager.Models.Device
 
-<div class="container mt-5">
-    <div class="card shadow-lg border-2">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">Device Details</h3>
-            <span class="badge bg-light text-dark">@Model.Status</span>
-        </div>
-        <div class="card-body">
-            <p><strong>Name:</strong> @Model.Name</p>
-            <p><strong>Status:</strong> @Model.Status</p>
-            <p><strong>Serial Number:</strong> @Model.SerialNumber</p>
-            <p><strong>Technician:</strong> @Model.Technician?.FullName</p>
+<div class="container py-5">
+    <h2>Device Details</h2>
 
-            <div class="d-flex gap-2 mt-3">
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">Edit</a>
-                <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
-            </div>
-        </div>
-    </div>
+    <dl class="row mt-3">
+        <dt class="col-sm-3">Name</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">Serial Number</dt>
+        <dd class="col-sm-9">@Model.SerialNumber</dd>
+
+        <dt class="col-sm-3">Type</dt>
+        <dd class="col-sm-9">@Model.DeviceType?.Name</dd>
+
+        <dt class="col-sm-3">Status</dt>
+        <dd class="col-sm-9">@Model.Status</dd>
+
+        <dt class="col-sm-3">Work Status</dt>
+        <dd class="col-sm-9">@Model.WorkStatus</dd>
+
+        <dt class="col-sm-3">Technician</dt>
+        <dd class="col-sm-9">@Model.Technician?.FullName</dd>
+
+        <dt class="col-sm-3">Manager Approval</dt>
+        <dd class="col-sm-9">
+            @(Model.IsApprovedByManager ? "Approved" : "Pending")
+        </dd>
+
+        @if (Model.IsApprovedByManager)
+        {
+            <dt class="col-sm-3">Approved At</dt>
+            <dd class="col-sm-9">@Model.ApprovedAt</dd>
+        }
+    </dl>
+        <a asp-action="Index" class="btn btn-secondary">Back</a>
 </div>

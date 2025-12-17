@@ -1,0 +1,56 @@
+﻿@model IEnumerable<DeviceManager.Models.Device>
+
+
+    @{
+    ViewData["Title"] = "Pending Approvals";
+}
+
+<div class="container py-5">
+        <h2>Completed Work Pending Approvals</h2>
+
+
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info mt-3">
+                    No completed work awaiting approval.
+                </div>
+            }
+            else
+            {
+                <table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Device</th>
+                            <th>Serial</th>
+                            <th>Technician</th>
+                            <th>Completed</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model)
+                        {
+                            <tr>
+                                <td>@d.Name</td>
+                                <td>@d.SerialNumber</td>
+                                <td>@d.Technician?.FullName</td>
+                                <td>@d.WorkStatus</td>
+                                <td>
+                                    <form asp-action="Approve" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <button class="btn btn-success btn-sm">
+                                            Approve
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-3"> Back </a>
+</div>
+
+

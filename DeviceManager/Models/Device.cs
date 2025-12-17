@@ -24,6 +24,14 @@ namespace DeviceManager.Models
 
         public int? DeviceTypeId { get; set; }
         public DeviceType? DeviceType { get; set; }
+
+        public DateTime? CompletedAt { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public string? ApprovedByManagerId { get; set; }
+        public bool IsApprovedByManager { get; set; }
+        public string WorkStatus { get; set; } = "Assigned"; 
+
+
     }
 
 }

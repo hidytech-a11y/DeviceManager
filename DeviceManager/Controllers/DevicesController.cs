@@ -12,19 +12,25 @@ using Microsoft.Extensions.Logging;
 
 namespace DeviceManager.Controllers
 {
-    // Require authentication for controller; per-action roles configured below.
     [Authorize]
-    public class DevicesController(
-        DeviceContext context,
-        ILogger<DevicesController> logger,
-        UserManager<IdentityUser> userManager) : Controller
+    public class DevicesController : Controller
     {
-        private readonly DeviceContext _context = context;
-        private readonly ILogger<DevicesController> _logger = logger;
-        private readonly UserManager<IdentityUser> _userManager = userManager;
+        private readonly DeviceContext _context;
+        private readonly ILogger<DevicesController> _logger;
+        private readonly UserManager<IdentityUser> _userManager;
         private const int PageSize = 10;
 
-        // LIST: Admin, Technician, Viewer can access list (content may be filtered for Technician)
+        public DevicesController(
+    DeviceContext context,
+    ILogger<DevicesController> logger,
+    UserManager<IdentityUser> userManager)
+        {
+            _context = context;
+            _logger = logger;
+            _userManager = userManager;
+        }
+
+        // LIST
         [Authorize(Roles = "Admin,Technician,Viewer,Manager")]
         public async Task<IActionResult> Index(
             string search,
@@ -39,86 +45,62 @@ namespace DeviceManager.Controllers
                 .Include(d => d.Technician)
                 .AsQueryable();
 
-           if (User.IsInRole("Technician"))
+            if (User.IsInRole("Technician"))
             {
                 var user = await _userManager.GetUserAsync(User);
-
                 var tech = await _context.Technicians
-                .FirstOrDefaultAsync(t => t.IdentityUserId == user.Id);
+                    .FirstOrDefaultAsync(t => t.IdentityUserId == user.Id);
 
-                if (tech != null)
-                {
-                    query = query.Where(d => d.TechnicianId == tech.Id);
-                }
-                else
-                {
-                    query = query.Where(d => false);
-                }
-
+                query = tech == null
+                    ? query.Where(d => false)
+                    : query.Where(d => d.TechnicianId == tech.Id);
             }
 
-            // Search
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(d =>
-                    d.Name.Contains(search) ||
-                    d.SerialNumber.Contains(search));
-            }
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(d => d.Name.Contains(search) || d.SerialNumber.Contains(search));
 
-            // Filters
-            if (!string.IsNullOrEmpty(typeFilter))
+            if (!string.IsNullOrWhiteSpace(typeFilter))
                 query = query.Where(d => d.DeviceType != null && d.DeviceType.Name == typeFilter);
 
-            if (!string.IsNullOrEmpty(statusFilter))
+            if (!string.IsNullOrWhiteSpace(statusFilter))
                 query = query.Where(d => d.Status == statusFilter);
 
             if (technicianId.HasValue)
-                query = query.Where(d => d.TechnicianId == technicianId.Value);
+                query = query.Where(d => d.TechnicianId == technicianId);
 
-            // Sorting
             query = sortOrder switch
             {
                 "name_desc" => query.OrderByDescending(d => d.Name),
-                "type" => query.OrderBy(d => d.DeviceType != null ? d.DeviceType.Name : string.Empty),
-                "type_desc" => query.OrderByDescending(d => d.DeviceType != null ? d.DeviceType.Name : string.Empty),
+                "type" => query.OrderBy(d => d.DeviceType!.Name),
+                "type_desc" => query.OrderByDescending(d => d.DeviceType!.Name),
                 _ => query.OrderBy(d => d.Name)
             };
 
-            // Pagination
-            int totalDevices = await query.CountAsync();
-            var items = await query
+            var totalItems = await query.CountAsync();
+            var devices = await query
                 .Skip((pageNumber - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
 
-            // Build ViewModel
             var vm = new DeviceListViewModel
             {
-                Devices = items,
+                Devices = devices,
                 PageNumber = pageNumber,
-                TotalPages = (int)Math.Ceiling(totalDevices / (double)PageSize),
-
+                TotalPages = (int)Math.Ceiling(totalItems / (double)PageSize),
                 Search = search,
                 SortOrder = sortOrder,
                 TypeFilter = typeFilter,
                 StatusFilter = statusFilter,
-                TechnicianId = technicianId,
-
-                // Stats
-                TotalDevices = await _context.Devices.CountAsync(),
-                ActiveCount = await _context.Devices.CountAsync(d => d.Status == "Active"),
-                InactiveCount = await _context.Devices.CountAsync(d => d.Status == "Inactive")
+                TechnicianId = technicianId
             };
 
-            // Extras for the view
-            ViewBag.AvailableTypes = await _context.DeviceTypes.OrderBy(t => t.Name).ToListAsync();
-            ViewBag.Technicians = await _context.Technicians.OrderBy(t => t.FullName).ToListAsync();
-            ViewBag.SortOrder = sortOrder;
+            ViewBag.AvailableTypes = await _context.DeviceTypes.ToListAsync();
+            ViewBag.Technicians = await _context.Technicians.ToListAsync();
 
             return View(vm);
         }
 
-        // CREATE (Admin only)
+        // CREATE
         [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
@@ -131,12 +113,10 @@ namespace DeviceManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Device device)
         {
-            // If you moved from manual Type to DeviceType dropdown, remove validation for Type
             ModelState.Remove("Type");
 
             if (!ModelState.IsValid)
             {
-                LogModelStateErrors();
                 LoadDropdowns();
                 return View(device);
             }
@@ -144,25 +124,20 @@ namespace DeviceManager.Controllers
             device.DeviceTypeId = device.DeviceTypeId == 0 ? null : device.DeviceTypeId;
             device.TechnicianId = device.TechnicianId == 0 ? null : device.TechnicianId;
 
-            _context.Devices.Add(device);
+            if (device.TechnicianId != null)
+            {
+                device.WorkStatus = "Assigned";
+                device.IsApprovedByManager = false;
+            }
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError(ex, "Save error");
-                ModelState.AddModelError("", "Error saving device");
-                LoadDropdowns();
-                return View(device);
-            }
+            _context.Devices.Add(device);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
-        // EDIT: Admin + Technician
-        [Authorize(Roles = "Admin,Technician")]
+        // EDIT
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             var device = await _context.Devices.FindAsync(id);
@@ -174,19 +149,10 @@ namespace DeviceManager.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Technician")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Device device)
         {
-            ModelState.Remove("Type");
-
-            if (!ModelState.IsValid)
-            {
-                LogModelStateErrors();
-                LoadDropdowns(device.TechnicianId, device.DeviceTypeId);
-                return View(device);
-            }
-
             var existing = await _context.Devices.FindAsync(device.Id);
             if (existing == null)
                 return NotFound();
@@ -195,30 +161,25 @@ namespace DeviceManager.Controllers
             existing.SerialNumber = device.SerialNumber;
             existing.Status = device.Status;
             existing.DeviceTypeId = device.DeviceTypeId == 0 ? null : device.DeviceTypeId;
-            existing.TechnicianId = device.TechnicianId == 0 ? null : device.TechnicianId;
 
-            try
+            if (existing.TechnicianId != device.TechnicianId)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError(ex, "Update error");
-                ModelState.AddModelError("", "Error updating device");
-                LoadDropdowns(device.TechnicianId, device.DeviceTypeId);
-                return View(device);
+                existing.TechnicianId = device.TechnicianId == 0 ? null : device.TechnicianId;
+                existing.WorkStatus = existing.TechnicianId == null ? null : "Assigned";
+                existing.IsApprovedByManager = false;
             }
 
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        // DETAILS: Admin, Technician, Viewer
-        [Authorize(Roles = "Admin,Technician,Viewer,Manager")]
+
+        [Authorize(Roles = "Admin,Manager,Technician,Viewer")]
         public async Task<IActionResult> Details(int id)
         {
             var device = await _context.Devices
-                .Include(d => d.Technician)
                 .Include(d => d.DeviceType)
+                .Include(d => d.Technician)
                 .FirstOrDefaultAsync(d => d.Id == id);
 
             if (device == null)
@@ -227,22 +188,68 @@ namespace DeviceManager.Controllers
             return View(device);
         }
 
-        // DELETE (GET): Admin only
+
+        // TECHNICIAN STATUS UPDATE
+        [Authorize(Roles = "Technician")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(int id, string status)
+        {
+            var device = await _context.Devices.FindAsync(id);
+            if (device == null)
+                return NotFound();
+
+            if (status != "InProgress" && status != "Done")
+                return BadRequest();
+
+            device.WorkStatus = status;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("MyTasks", "Technician");
+        }
+
+        // MANAGER APPROVAL LIST
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> PendingApproval()
+        {
+            var devices = await _context.Devices
+                .Include(d => d.Technician)
+                .Include(d => d.DeviceType)
+                .Where(d => d.WorkStatus == "Done" && !d.IsApprovedByManager)
+                .ToListAsync();
+
+            return View(devices);
+        }
+
+        // MANAGER APPROVE
+        [Authorize(Roles = "Manager")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Approve(int id)
+        {
+            var device = await _context.Devices.FindAsync(id);
+            if (device == null)
+                return NotFound();
+
+            device.IsApprovedByManager = true;
+            device.ApprovedByManagerId = _userManager.GetUserId(User);
+            device.ApprovedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(PendingApproval));
+        }
+
+        // DELETE
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var device = await _context.Devices
-                .Include(d => d.Technician)
-                .Include(d => d.DeviceType)
-                .FirstOrDefaultAsync(d => d.Id == id);
-
+            var device = await _context.Devices.FindAsync(id);
             if (device == null)
                 return NotFound();
 
             return View(device);
         }
 
-        // DELETE (POST)
         [Authorize(Roles = "Admin")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
@@ -254,38 +261,54 @@ namespace DeviceManager.Controllers
                 _context.Devices.Remove(device);
                 await _context.SaveChangesAsync();
             }
-
             return RedirectToAction(nameof(Index));
         }
 
-        // Helpers
-        private void LoadDropdowns(int? selectedTech = null, int? selectedType = null)
+        // HELPERS
+        private void LoadDropdowns(int? techId = null, int? typeId = null)
         {
             ViewBag.Technicians = new SelectList(
-                _context.Technicians.OrderBy(t => t.FullName).ToList(),
+                _context.Technicians.OrderBy(t => t.FullName),
                 "Id",
                 "FullName",
-                selectedTech
-            );
+                techId);
 
             ViewBag.DeviceTypes = new SelectList(
-                _context.DeviceTypes.OrderBy(t => t.Name).ToList(),
+                _context.DeviceTypes.OrderBy(t => t.Name),
                 "Id",
                 "Name",
-                selectedType
-            );
+                typeId);
         }
 
-        private void LogModelStateErrors()
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Overview()
         {
-            foreach (var kvp in ModelState)
+            var totalDevices = await _context.Devices.CountAsync();
+
+            var assigned = await _context.Devices
+            .CountAsync(d => d.TechnicianId != null);
+
+            var inProgress = await _context.Devices
+                .CountAsync(d => d.WorkStatus == "InProgress");
+
+            var donePendingApproval = await _context.Devices
+                .CountAsync(d => d.WorkStatus == "Done" && !d.IsApprovedByManager);
+
+            var approved = await _context.Devices
+                .CountAsync(d => d.IsApprovedByManager);
+
+            var model = new AdminOverviewViewModel
             {
-                foreach (var error in kvp.Value.Errors)
-                {
-                    _logger.LogWarning("ModelState error. Field: {Field}, Error: {Error}",
-                        kvp.Key, error.ErrorMessage);
-                }
-            }
+                TotalDevices = totalDevices,
+                AssignedDevices = assigned,
+                InProgress = inProgress,
+                PendingApproval = donePendingApproval,
+                Approved = approved
+            };
+
+            return View(model);
+
         }
     }
+
 }
