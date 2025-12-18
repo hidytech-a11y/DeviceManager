@@ -1,19 +1,86 @@
 ﻿@model DeviceManager.Models.Device
 
-<div class="container mt-5">
-    <div class="card shadow-sm p-4 border-0">
-        <h3>Delete Device</h3>
-        <p>Are you sure you want to delete this device?</p>
+@{
+    ViewData["Title"] = "Delete Device";
+}
 
-        <table class="table table-bordered">
-            <tr><th>Name</th><td>@Model.Name</td></tr>
-            <tr><th>Status</th><td>@Model.Status</td></tr>
-            <tr><th>Technician</th><td>@Model.Technician?.FullName ?? "Unassigned"</td></tr>
-        </table>
+<div class="container py-4">
 
-        <form method="post">
-            <button type="submit" class="btn btn-danger">Delete</button>
-            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-        </form>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0 text-danger">Delete Device</h3>
+
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            Back
+        </a>
     </div>
+
+    <div class="card border-danger">
+        <div class="card-body">
+
+            <div class="alert alert-danger mb-4">
+                This action is permanent.
+                Confirm before proceeding.
+            </div>
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Name</div>
+                    <div class="fw-semibold">@Model.Name</div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Serial Number</div>
+                    <div class="fw-semibold">@Model.SerialNumber</div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Device Type</div>
+                    <div class="fw-semibold">
+                        @Model.DeviceType?.Name
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Assigned Technician</div>
+                    <div class="fw-semibold">
+                        @(Model.Technician?.FullName ?? "Unassigned")
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Status</div>
+                    <div>
+                        @if (Model.Status == "Active")
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Inactive</span>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        Confirm Delete
+                    </button>
+
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
 </div>

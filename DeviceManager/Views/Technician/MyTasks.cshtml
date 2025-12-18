@@ -4,78 +4,103 @@
     ViewData["Title"] = "My Tasks";
 }
 
-        <div class="container py-5">
-            <h2>My Assigned Devices</h2>
-
-                @if (!Model.Any())
-                {
-                    <div class="alert alert-info mt-3">
-                        No devices assigned.
+                 <div class="container py-5">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">My Assigned Devices</h4>
                     </div>
-                }
-                else
-                {
-                    <table class="table table-striped mt-3">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Serial Number</th>
-                                <th>Type</th>
-                                <th>Work Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var d in Model)
-                            {
-                                <tr>
-                                    <td>@d.Name</td>
-                                    <td>@d.SerialNumber</td>
-                                    <td>@d.DeviceType?.Name</td>
-                                    <td>@d.WorkStatus</td>
-                                    <td>
-                                        @if (d.WorkStatus == "Assigned")
-                                        {
-                                            <form asp-controller="Devices"
-                                                  asp-action="UpdateStatus"
-                                                  method="post">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@d.Id" />
-                                                <input type="hidden" name="status" value="InProgress" />
-                                                <button class="btn btn-primary btn-sm">
-                                                    Start
-                                                </button>
-                                            </form>
-                                        }
-                                        else if (d.WorkStatus == "InProgress")
-                                        {
-                                            <form asp-controller="Devices"
-                                                  asp-action="UpdateStatus"
-                                                  method="post">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@d.Id" />
-                                                <input type="hidden" name="status" value="Done" />
-                                                <button class="btn btn-success btn-sm">
-                                                    Mark Done
-                                                </button>
-                                            </form>
-                                        }
-                                        else if (d.WorkStatus == "Done" && !d.IsApprovedByManager)
-                                        {
-                                            <span class="text-warning">Waiting approval</span>
-                                        }
-                                        else if (d.IsApprovedByManager)
-                                        {
-                                            <span class="text-success">Approved</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
 
-                <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-3">Back</a>
-        </div>
+
+                    @if (!Model.Any())
+                    {
+                        <div class="alert alert-info border-0 shadow-sm">
+                            No devices assigned.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card shadow-sm border-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Serial Number</th>
+                                            <th>Type</th>
+                                            <th>Work Status</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var d in Model)
+                                        {
+                                            <tr>
+                                                <td>@d.Name</td>
+                                                <td>@d.SerialNumber</td>
+                                                <td>@d.DeviceType?.Name</td>
+
+                                                <td>
+                                                    @if (d.WorkStatus == "Assigned")
+                                                    {
+                                                        <span class="badge badge-assigned">Assigned</span>
+                                                    }
+                                                    else if (d.WorkStatus == "InProgress")
+                                                    {
+                                                        <span class="badge badge-progress">In Progress</span>
+                                                    }
+                                                    else if (d.WorkStatus == "Done" && !d.IsApprovedByManager)
+                                                    {
+                                                        <span class="badge badge-waiting">Waiting Approval</span>
+                                                    }
+                                                    else if (d.IsApprovedByManager)
+                                                    {
+                                                        <span class="badge badge-approved">Approved</span>
+                                                    }
+                                                </td>
+
+                                                <td class="text-end">
+                                                    @if (d.WorkStatus == "Assigned")
+                                                    {
+                                                        <form class="d-inline"
+                                                              asp-controller="Devices"
+                                                              asp-action="UpdateStatus"
+                                                              method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@d.Id" />
+                                                            <input type="hidden" name="status" value="InProgress" />
+                                                            <button class="btn btn-outline-primary btn-sm">
+                                                                Start
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else if (d.WorkStatus == "InProgress")
+                                                    {
+                                                        <form class="d-inline"
+                                                              asp-controller="Devices"
+                                                              asp-action="UpdateStatus"
+                                                              method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@d.Id" />
+                                                            <input type="hidden" name="status" value="Done" />
+                                                            <button class="btn btn-outline-success btn-sm">
+                                                                Mark Done
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">—</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+
+                    <a asp-controller="Home" asp-action="Index"class="btn btn-secondary mt-4 pb-xl-2">  Back </a>
+
+                </div>
 
 

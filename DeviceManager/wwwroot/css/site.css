@@ -20,3 +20,148 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+
+/* =========================
+Global Theme Variables
+========================= */
+
+:root {
+    --brand-dark: #3282b8;
+    --brand-primary: #0f4c75;
+    --brand-light: #ffffff;
+    --border-light: #e6e9ef;
+    --bg-soft: #f8f9fb;
+    --text-muted: #6c757d;
+}
+
+/* =========================
+Base
+========================= */
+
+body {
+    background-color: var(--bg-soft);
+    color: #212529;
+}
+
+h1, h2, h3, h4, h5 {
+    color: var(--brand-dark);
+    font-weight: 600;
+}
+
+/* =========================
+Navbar
+========================= */
+
+.navbar {
+    background-color: var(--brand-dark) !important;
+}
+
+    .navbar .nav-link,
+    .navbar-brand {
+        color: var(--brand-light) !important;
+    }
+
+        .navbar .nav-link:hover {
+            color: #cfe8ff !important;
+        }
+
+/* =========================
+Cards
+========================= */
+
+.card {
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+}
+
+/* =========================
+Tables
+========================= */
+
+.table {
+    background-color: var(--brand-light);
+}
+
+    .table thead th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+/* =========================
+Buttons
+========================= */
+
+.btn-primary {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+    .btn-primary:hover {
+        background-color: #256a99;
+        border-color: #256a99;
+    }
+
+.btn-outline-success {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+    .btn-outline-success:hover {
+        background-color: var(--brand-primary);
+        color: var(--brand-light);
+    }
+
+/* =========================
+Forms
+========================= */
+
+.form-control,
+.form-select {
+    border-radius: 4px;
+    border: 1px solid var(--border-light);
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 0.1rem rgba(50,130,184,0.15);
+    }
+
+/* =========================
+Alerts
+========================= */
+
+.alert {
+    border-radius: 6px;
+}
+
+/* =========================
+Status Labels
+========================= */
+
+.text-warning {
+    color: #d39e00 !important;
+}
+
+.text-success {
+    color: #2e8b57 !important;
+}
+
+/* =========================
+Page Transitions
+========================= */
+
+.container,
+.card,
+.table,
+.alert {
+ transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+}

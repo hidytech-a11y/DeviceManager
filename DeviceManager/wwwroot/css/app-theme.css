@@ -1,0 +1,27 @@
+﻿
+
+
+.badge-assigned {
+    background-color: #3282b8;
+    color: #ffffff;
+}
+
+.badge-progress {
+    background-color: #0f4c75;
+    color: #ffffff;
+}
+
+.badge-done {
+    background-color: #6c757d;
+    color: #ffffff;
+}
+
+.badge-approved {
+    background-color: #198754;
+    color: #ffffff;
+}
+
+.badge-waiting {
+    background-color: #ffc107;
+    color: #000000;
+}
