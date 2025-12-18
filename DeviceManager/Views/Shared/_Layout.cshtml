@@ -92,7 +92,7 @@
                             }
 
                             @* Viewer menu *@
-                            @if (User.IsInRole("Viewer"))
+                            @if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Viewer"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link fw-semibold" asp-controller="Reports" asp-action="Index">Reports</a>
@@ -115,7 +115,7 @@
                             var user = await UserManager.GetUserAsync(User);
 
                             <li class="nav-item me-4">
-                                <span class="navbar-text fw-semibold">
+                                <span class="navbar-text fw-semibold text-white">
                                     @user.Email
                                 </span>
                             </li>
