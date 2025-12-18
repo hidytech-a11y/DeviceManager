@@ -1,0 +1,38 @@
+﻿@model IEnumerable<DeviceManager.Models.TechnicianPerformanceViewModel>
+
+    @{
+        ViewData["Title"] = "Technician Performance Report";
+}
+
+<div class="container mt-4">
+    <h3>Technician Performance</h3>
+
+    <table class="table table-sm table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Technician</th>
+                <th>Assigned</th>
+                <th>In Progress</th>
+                <th>Completed</th>
+                <th>Approved</th>
+                <th>Pending Approval</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td>@t.TechnicianName</td>
+                    <td>@t.TotalAssigned</td>
+                    <td>@t.InProgress</td>
+                    <td>@t.Completed</td>
+                    <td class="text-success">@t.Approved</td>
+                    <td class="text-warning">@t.PendingApproval</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a asp-action="Index" class="btn btn-secondary btn-sm mt-3"> Back to Reports </a>
+
+</div>
