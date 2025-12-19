@@ -11,14 +11,48 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeviceManager.Migrations
 {
     [DbContext(typeof(DeviceContext))]
-    [Migration("20251217075531_AddUpdateStatusAndManagerApproved")]
-    partial class AddUpdateStatusAndManagerApproved
+    [Migration("20251218211548_AddRecreatedDb")]
+    partial class AddRecreatedDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.20");
+
+            modelBuilder.Entity("DeviceManager.Models.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Device")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PerformedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
 
             modelBuilder.Entity("DeviceManager.Models.Device", b =>
                 {
@@ -38,7 +72,7 @@ namespace DeviceManager.Migrations
                     b.Property<int?>("DeviceTypeId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsApprovalByManager")
+                    b.Property<bool>("IsApprovedByManager")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

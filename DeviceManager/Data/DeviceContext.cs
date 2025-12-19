@@ -14,6 +14,7 @@ namespace DeviceManager.Data
         public DbSet<Device> Devices { get; set; }
         public DbSet<Technician> Technicians { get; set; }
         public DbSet<DeviceType> DeviceTypes { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -111,6 +112,8 @@ namespace DeviceManager.Data
             }
 
         }
+
+
 
     }
 }

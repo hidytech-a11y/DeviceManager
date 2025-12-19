@@ -4,14 +4,20 @@
     ViewData["Title"] = "Device Details";
 }
 
+
 <div class="container py-4">
+   
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="mb-0">Device Details</h3>
-
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-            Back
-        </a>
+        <div class="gap-3">
+            <a asp-controller="Audit" asp-action="Device" asp-route-deviceId="@Model.Id" class="btn btn-secondary btn-sm">
+                View Audit Trail
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                Back
+            </a>
+        </div>
     </div>
 
     <div class="card">

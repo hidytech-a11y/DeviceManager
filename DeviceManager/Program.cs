@@ -1,8 +1,12 @@
 using DeviceManager.Data;
+using DeviceManager.Services.Logging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 // Database
 builder.Services.AddDbContext<DeviceContext>(options =>
