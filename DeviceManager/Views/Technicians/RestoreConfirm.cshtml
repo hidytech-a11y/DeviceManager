@@ -1,0 +1,30 @@
+﻿@model DeviceManager.Models.Technician
+
+@{
+    ViewData["Title"] = "Restore Technician";
+}
+
+<h4>Restore @Model.FullName</h4>
+
+<form asp-action="Restore" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" name="TechnicianId" value="@Model.Id" />
+
+    <p>Select devices to reassign:</p>
+
+    @foreach (var d in Model.Devices)
+    {
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   name="SelectedDeviceIds"
+                   value="@d.Id" />
+            <label class="form-check-label">
+                @d.Name
+            </label>
+        </div>
+    }
+
+    <button type="submit" class="btn btn-success mt-3"> Restore Technician </button>
+</form>

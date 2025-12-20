@@ -56,7 +56,7 @@
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link fw-semibold" asp-controller="Technician" asp-action="Index">Technicians</a>
+                                <a class="nav-link fw-semibold" asp-controller="Technicians" asp-action="Index">Technicians</a>
                             </li>
 
                             @* Admin menu *@
@@ -73,6 +73,11 @@
                                 <li class="nav-item">
                                     <a class="nav-link fw-semibold" asp-controller="Devices" asp-action="Overview">Overview</a>
                                 </li>
+
+
+                              @*   <li class="nav-item">                                 
+                                    <a class="nav-link fw-semibold" asp-controller="Technicians" asp-action="Deleted"> Deleted Technicians </a>
+                                </li> *@
                             }
 
                             @* Manager menu *@
@@ -87,7 +92,7 @@
                             @if (User.IsInRole("Technician"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link fw-semibold" asp-controller="Technician" asp-action="MyTasks">My Tasks</a>
+                                    <a class="nav-link fw-semibold" asp-controller="Technicians" asp-action="MyTasks">My Tasks</a>
                                 </li>
                             }
 

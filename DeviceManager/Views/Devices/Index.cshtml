@@ -107,7 +107,7 @@
                                 }
                                 else
                                 {
-                                    <span class="badge bg-secondary">Inactive</span>
+                                    <span class="badge bg-danger">Inactive</span>
                                 }
                             </td>
 
@@ -139,7 +139,7 @@
                                     View
                                 </a>
 
-                                @if (User.IsInRole("Admin"))
+                                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
                                 {
                                     <a asp-action="Edit"
                                        asp-route-id="@d.Id"

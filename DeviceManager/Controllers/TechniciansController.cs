@@ -9,12 +9,12 @@ using Microsoft.EntityFrameworkCore;
 namespace DeviceManager.Controllers
 {
     [Authorize(Roles = "Admin,Manager,Technician,Viewer")]
-    public class TechnicianController : Controller
+    public class TechniciansController : Controller
     {
         private readonly DeviceContext _context;
         private readonly UserManager<IdentityUser> _userManager;
 
-        public TechnicianController(DeviceContext context, UserManager<IdentityUser> userManager)
+        public TechniciansController(DeviceContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
             _userManager = userManager;
@@ -176,28 +176,80 @@ namespace DeviceManager.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        /* ---------------- RESTORE ---------------- */
+        /* ---------------- DELETED ---------------- */
+
+
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Deleted()
+        {
+            var technicians = await _context.Technicians
+                .IgnoreQueryFilters()
+                .Where(t => t.IsDeleted)
+                .OrderBy(t => t.FullName)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return View(technicians);
+        }
+
+        /* ---------------- RESTORE (POST) ---------------- */
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> Restore(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Restore(RestoreTechnicianViewModel model)
         {
             var tech = await _context.Technicians
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(t => t.Id == id);
+                .FirstOrDefaultAsync(t => t.Id == model.TechnicianId);
 
             if (tech == null) return NotFound();
 
             tech.IsDeleted = false;
             tech.DeletedAt = null;
 
+            if (model.SelectedDeviceIds.Any())
+            {
+                var devices = await _context.Devices
+                    .Where(d => model.SelectedDeviceIds.Contains(d.Id))
+                    .ToListAsync();
+
+                foreach (var d in devices)
+                {
+                    d.TechnicianId = tech.Id;
+                    d.Status = "Active";
+                    d.WorkStatus = "Assigned";
+                }
+            }
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
+
+        /* ---------------- RESTORE (GET) ---------------- */
+
+
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RestoreConfirm(int id)
+        {
+            var tech = await _context.Technicians
+                .IgnoreQueryFilters()
+                .Include(t => t.Devices)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (tech == null) return NotFound();
+
+            return View(tech);
+        }
+
+
+
         /* ---------------- MY TASKS ---------------- */
 
-        [Authorize(Roles = "Admin,Technician")]
+        [Authorize(Roles = "Admin,Manager,Technician")]
         public async Task<IActionResult> MyTasks()
         {
             var userId = _userManager.GetUserId(User);

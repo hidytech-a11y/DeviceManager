@@ -150,7 +150,7 @@ namespace DeviceManager.Controllers
         }
 
         // EDIT
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int id)
         {
             var device = await _context.Devices.FindAsync(id);
@@ -161,7 +161,7 @@ namespace DeviceManager.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Manager")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Device device)
         {
@@ -220,7 +220,7 @@ namespace DeviceManager.Controllers
         }
 
         // TECHNICIAN STATUS UPDATE
-        [Authorize(Roles = "Technician")]
+        [Authorize(Roles = "Admin,Technician")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, string status)
@@ -257,7 +257,7 @@ namespace DeviceManager.Controllers
         }
 
         // MANAGER APPROVE
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(int id)

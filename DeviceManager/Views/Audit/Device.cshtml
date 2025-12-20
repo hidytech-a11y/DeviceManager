@@ -51,8 +51,16 @@
             </div>
         </div>
     } 
+    <div>
 
-    <a asp-controller="Devices" asp-action="Details" asp-route-id="@deviceId" class="btn btn-secondary btn-sm mt-3">
+    <a asp-controller="Devices" asp-action="Details" asp-route-id="@deviceId" class="btn btn-secondary btn-sm mt-3 ">
         Back to Device
     </a>
+
+   @*  @if(deviceId != null)
+        {
+            <a asp-controller="Audit" asp-action="ExportDeviceAudit" asp-all-route-deviceId="@ViewBag.DeviceId"
+            class="btn btn-success btn-sm mt-3">Export to Excel</a>
+        } *@
+    </div>
 </div>
