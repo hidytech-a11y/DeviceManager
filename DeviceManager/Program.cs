@@ -1,4 +1,5 @@
 using DeviceManager.Data;
+using DeviceManager.Services;
 using DeviceManager.Services.Logging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddScoped<IAuditService, AuditService>();
+
 
 // Database
 builder.Services.AddDbContext<DeviceContext>(options =>
@@ -24,12 +26,34 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<DeviceContext>()
 .AddDefaultTokenProviders();
 
+
 // MVC
 builder.Services.AddControllersWithViews(options =>
 {
     // Redirect unauthorized users
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter());
 });
+
+builder.Services.AddScoped<IAdminOverrideService, AdminOverrideService>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("TechnicianOrAdminOverride", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Technician") ||
+            (context.User.IsInRole("Admin") &&
+             builder.Configuration.GetValue<bool>("AdminOverride:Enabled"))
+        ));
+
+    options.AddPolicy("ManagerOrAdminOverride", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Manager") ||
+            (context.User.IsInRole("Admin") &&
+             builder.Configuration.GetValue<bool>("AdminOverride:Enabled"))
+        ));
+});
+
+
 
 var app = builder.Build();
 
@@ -84,6 +108,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+
 
 // Routing
 app.MapControllerRoute(

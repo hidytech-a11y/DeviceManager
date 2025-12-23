@@ -5,6 +5,14 @@
     ViewData["Title"] = "Pending Approvals";
 }
 
+@if (User.IsInRole("Admin"))
+{
+    <div class="alert alert-danger">
+        Admin emergency override active.
+        Actions are logged.
+    </div>
+}
+
 <div class="container py-5">
         <h2>Completed Work Pending Approvals</h2>
 

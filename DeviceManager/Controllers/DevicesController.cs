@@ -21,18 +21,21 @@ namespace DeviceManager.Controllers
         private readonly ILogger<DevicesController> _logger;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IAuditService _audit;
+        private readonly IAdminOverrideService _override;
         private const int PageSize = 10;
 
         public DevicesController(
             DeviceContext context,
             ILogger<DevicesController> logger,
             UserManager<IdentityUser> userManager,
-            IAuditService audit)
+            IAuditService audit,
+            IAdminOverrideService overrideService)
         {
             _context = context;
             _logger = logger;
             _userManager = userManager;
             _audit = audit;
+            _override = overrideService;
         }
 
         // LIST
@@ -221,10 +224,15 @@ namespace DeviceManager.Controllers
 
         // TECHNICIAN STATUS UPDATE
         [Authorize(Roles = "Admin,Technician")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, string status)
         {
+            if (!User.IsInRole("Technician") &&
+                !(User.IsInRole("Admin") && _override.IsEnabled()))
+                return Forbid();
+
             var device = await _context.Devices.FindAsync(id);
             if (device == null) return NotFound();
 
@@ -235,14 +243,15 @@ namespace DeviceManager.Controllers
 
             await _audit.LogAsync(
                 device.Id,
-                "Work Status Updated",
+                "Work Status Updated (Override)",
                 old,
                 status,
                 User.Identity.Name
             );
 
-            return RedirectToAction("MyTasks", "Technician");
+            return RedirectToAction("Index");
         }
+
 
         // MANAGER APPROVAL LIST
         [Authorize(Roles = "Manager")]
@@ -258,22 +267,27 @@ namespace DeviceManager.Controllers
 
         // MANAGER APPROVE
         [Authorize(Roles = "Admin,Manager")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(int id)
         {
+            if (!User.IsInRole("Manager") &&
+                !(User.IsInRole("Admin") && _override.IsEnabled()))
+                return Forbid();
+
             var device = await _context.Devices.FindAsync(id);
             if (device == null) return NotFound();
 
             device.IsApprovedByManager = true;
-            device.ApprovedByManagerId = _userManager.GetUserId(User);
+            device.ApprovedByManagerId = User.Identity.Name;
             device.ApprovedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
             await _audit.LogAsync(
                 device.Id,
-                "Manager Approval",
+                "Manager Approval (Override)",
                 "Pending",
                 "Approved",
                 User.Identity.Name
@@ -281,6 +295,7 @@ namespace DeviceManager.Controllers
 
             return RedirectToAction(nameof(PendingApproval));
         }
+
 
         // DELETE
         [Authorize(Roles = "Admin")]

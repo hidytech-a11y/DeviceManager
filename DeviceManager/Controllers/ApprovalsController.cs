@@ -1,4 +1,5 @@
 ﻿using DeviceManager.Data;
+using DeviceManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -6,19 +7,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeviceManager.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = "ManagerOrAdminOverride")]
     public class ApprovalsController : Controller
     {
 
         private readonly DeviceContext _context;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly IAdminOverrideService _override;
 
         public ApprovalsController(
-     DeviceContext context,
-     UserManager<IdentityUser> userManager)
+             DeviceContext context,
+             UserManager<IdentityUser> userManager,
+             IAdminOverrideService overrideService)
         {
             _context = context;
             _userManager = userManager;
+            _override = overrideService;
         }
 
         // GET: /Approvals
@@ -38,20 +42,22 @@ namespace DeviceManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(int id)
         {
-            var userId = _userManager.GetUserId(User);
+            var isAdminOverride =
+                User.IsInRole("Admin") && _override.IsEnabled();
+
+            if (!isAdminOverride && !User.IsInRole("Manager"))
+                return Unauthorized();
 
             var device = await _context.Devices.FindAsync(id);
             if (device == null)
                 return NotFound();
 
             device.IsApprovedByManager = true;
-            device.ApprovedByManagerId = userId;
+            device.ApprovedByManagerId = _userManager.GetUserId(User);
             device.ApprovedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
     }
-
-
 }

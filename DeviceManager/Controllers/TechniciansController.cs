@@ -1,5 +1,6 @@
 ﻿using DeviceManager.Data;
 using DeviceManager.Models;
+using DeviceManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,16 +9,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeviceManager.Controllers
 {
-    [Authorize(Roles = "Admin,Manager,Technician,Viewer")]
+    [Authorize(Roles = "Admin,Technician")]
     public class TechniciansController : Controller
     {
         private readonly DeviceContext _context;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly IAdminOverrideService _override;
 
-        public TechniciansController(DeviceContext context, UserManager<IdentityUser> userManager)
+        public TechniciansController(
+            DeviceContext context,
+            UserManager<IdentityUser> userManager,
+            IAdminOverrideService overrideService)
         {
             _context = context;
             _userManager = userManager;
+            _override = overrideService;
         }
 
         /* ---------------- HELPERS ---------------- */
@@ -49,8 +55,8 @@ namespace DeviceManager.Controllers
             var technicians = await _context.Technicians
                 .Where(t => !t.IsDeleted)
                 .ToListAsync();
-            return View(technicians);
 
+            return View(technicians);
         }
 
         /* ---------------- CREATE ---------------- */
@@ -138,6 +144,7 @@ namespace DeviceManager.Controllers
         {
             var tech = await _context.Technicians.FirstOrDefaultAsync(x => x.Id == id);
             if (tech == null) return NotFound();
+
             return View(tech);
         }
 
@@ -148,6 +155,7 @@ namespace DeviceManager.Controllers
         {
             var tech = await _context.Technicians.FindAsync(id);
             if (tech == null) return NotFound();
+
             return View(tech);
         }
 
@@ -178,8 +186,6 @@ namespace DeviceManager.Controllers
 
         /* ---------------- DELETED ---------------- */
 
-
-
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Deleted()
         {
@@ -193,7 +199,7 @@ namespace DeviceManager.Controllers
             return View(technicians);
         }
 
-        /* ---------------- RESTORE (POST) ---------------- */
+        /* ---------------- RESTORE ---------------- */
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
@@ -227,11 +233,6 @@ namespace DeviceManager.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
-        /* ---------------- RESTORE (GET) ---------------- */
-
-
-
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RestoreConfirm(int id)
         {
@@ -245,53 +246,78 @@ namespace DeviceManager.Controllers
             return View(tech);
         }
 
-
-
         /* ---------------- MY TASKS ---------------- */
 
-        [Authorize(Roles = "Admin,Manager,Technician")]
+        [Authorize(Policy = "TechnicianOrAdminOverride")]
         public async Task<IActionResult> MyTasks()
         {
-            var userId = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            var isAdminOverride =
+                User.IsInRole("Admin") && _override.IsEnabled();
 
-            var tech = await _context.Technicians
-                .FirstOrDefaultAsync(t => t.IdentityUserId == userId && !t.IsDeleted);
+            IQueryable<Device> query = _context.Devices
+                .Include(d => d.DeviceType);
 
-            if (tech == null) return Forbid();
+            if (!isAdminOverride)
+            {
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var devices = await _context.Devices
-                .Include(d => d.DeviceType)
-                .Where(d => d.TechnicianId == tech.Id)
-                .ToListAsync();
+                var tech = await _context.Technicians
+                    .FirstOrDefaultAsync(t => t.IdentityUserId == userId && !t.IsDeleted);
 
+                if (tech == null) return Forbid();
+
+                query = query.Where(d => d.TechnicianId == tech.Id);
+            }
+
+            var devices = await query.ToListAsync();
             return View(devices);
         }
 
-        [Authorize(Roles ="technician")]
-        [HttpPost]
+        /* ---------------- UPDATE STATUS ---------------- */
 
+        [Authorize(Policy = "TechnicianOrAdminOverride")]
+        [HttpPost]
         public async Task<IActionResult> UpdateStatus(int id, string status)
         {
-            var userId = _userManager.GetUserId(User);
+            var isAdminOverride =
+                User.IsInRole("Admin") && _override.IsEnabled();
 
-            var technician = await _context.Technicians
-                .FirstOrDefaultAsync(t => t.IdentityUserId == userId);
+            IQueryable<Device> query = _context.Devices;
 
-            if (technician == null)
-                return Unauthorized();
+            if (!isAdminOverride)
+            {
+                var userId = _userManager.GetUserId(User);
 
-            var device = await _context.Devices
-                .FirstOrDefaultAsync(d => d.Id == id && d.TechnicianId == technician.Id);
+                var tech = await _context.Technicians
+                    .FirstOrDefaultAsync(t => t.IdentityUserId == userId);
 
-            if (device == null)
-                return NotFound();
+                if (tech == null) return Unauthorized();
+
+                query = query.Where(d => d.TechnicianId == tech.Id);
+            }
+
+            var device = await query.FirstOrDefaultAsync(d => d.Id == id);
+            if (device == null) return NotFound();
 
             device.WorkStatus = status;
+
+
+            if (isAdminOverride)
+            {
+                await _context.AuditLogs.AddAsync(new AuditLog
+                {
+                    Action = "Admin Override: Update Device Status",
+                    DeviceId = device.Id,
+                    PerformedBy = User.Identity.Name!,
+                    PerformedAt = DateTime.UtcNow,
+                    NewValue = status
+                });
+            }
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(MyTasks));
-
         }
     }
 }
