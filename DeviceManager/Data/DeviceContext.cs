@@ -15,6 +15,11 @@ namespace DeviceManager.Data
         public DbSet<Technician> Technicians { get; set; }
         public DbSet<DeviceType> DeviceTypes { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Diagnosis> Diagnoses { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<DeviceHistory> DeviceHistories { get; set; }
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,6 +40,11 @@ namespace DeviceManager.Data
                 new DeviceType { Id = 3, Name = "Tablet" },
                 new DeviceType { Id = 4, Name = "Smartphone" }
             );
+
+            modelBuilder.Entity<Diagnosis>()
+                .HasOne(d => d.Device)
+                .WithMany(d => d.Diagnoses)
+                .HasForeignKey(d => d.DeviceId);
         }
 
         public override async Task<int> SaveChangesAsync(

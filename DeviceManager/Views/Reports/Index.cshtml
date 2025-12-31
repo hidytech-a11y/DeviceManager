@@ -1,114 +1,235 @@
-﻿@model DeviceManager.Models.ReportsViewModel
+﻿@model DeviceManager.Models.PerformanceReportViewModel
 
 @{
-    ViewData["Title"] = "Reports";
+    ViewData["Title"] = "Technician Performance Reports";
 }
 
 <div class="container py-4">
+    <h2 class="mb-4">
+        <i class="bi bi-graph-up"></i> Technician Performance Reports
+    </h2>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-4">System Report</h3>
-        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
-        {
-            <div class="d-flex gap-3">
-                 <a asp-controller="Reports" asp-action="TechnicianPerformance" class="btn btn-primary   btn-sm mb-3">Technician Performance</a>
-                 <a asp-action="ExportExcel" class="btn btn-success btn-sm mb-3">Export Excel</a>
-            </div>
-        }
-        
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-light shadow-sm">
-                <div class="card-body">
-                    <small>Total Devices</small>
-                    <h4>@Model.TotalDevices</h4>
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date"
+                           name="startDate"
+                           value="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                           class="form-control" />
                 </div>
-            </div>
-        </div>
 
-        <div class="col-md-3">
-            <div class="card border-light shadow-sm">
-                <div class="card-body">
-                    <small>Active Devices</small>
-                    <h4 class="text-success">@Model.ActiveDevices</h4>
+                <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date"
+                           name="endDate"
+                           value="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                           class="form-control" />
                 </div>
-            </div>
-        </div>
 
-        <div class="col-md-3">
-            <div class="card border-light shadow-sm">
-                <div class="card-body">
-                    <small>Inactive Devices</small>
-                    <h4 class="text-danger">@Model.InactiveDevices</h4>
+                <div class="col-md-3">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="form-select">
+                        <option value="completed" selected="@(Model.SortBy == "completed")">Devices Completed</option>
+                        <option value="sla" selected="@(Model.SortBy == "sla")">SLA Compliance</option>
+                        <option value="speed" selected="@(Model.SortBy == "speed")">Average Speed</option>
+                        <option value="workload" selected="@(Model.SortBy == "workload")">Current Workload</option>
+                    </select>
                 </div>
-            </div>
-        </div>
 
-        <div class="col-md-3">
-            <div class="card border-light shadow-sm">
-                <div class="card-body">
-                    <small>Pending Approvals</small>
-                    <h4 class="text-warning">@Model.PendingApprovals</h4>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Apply Filter
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
-    <h5 class="mb-3">Task Overview</h5>
+    <!-- Summary Cards -->
+    @{
+        var totalCompleted = Model.TechnicianPerformances.Sum(p => p.TotalDevicesCompleted);
+        var totalMetSLA = Model.TechnicianPerformances.Sum(p => p.DevicesMetSLA);
+        var totalMissedSLA = Model.TechnicianPerformances.Sum(p => p.DevicesMissedSLA);
+        var overallSLA = (totalMetSLA + totalMissedSLA) > 0
+        ? (double)totalMetSLA / (totalMetSLA + totalMissedSLA) * 100
+        : 0;
+    }
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card border-light shadow-sm">
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
                 <div class="card-body">
-                    <small>Assigned</small>
-                    <h5>@Model.AssignedTasks</h5>
+                    <h3 class="mb-0 text-white">@totalCompleted</h3>
+                    <small>Total Devices Completed</small>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card border-light shadow-sm">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
                 <div class="card-body">
-                    <small>In Progress</small>
-                    <h5>@Model.InProgressTasks</h5>
+                    <h3 class="mb-0 text-white">@totalMetSLA</h3>
+                    <small>SLA Met</small>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card border-light shadow-sm">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
                 <div class="card-body">
-                    <small>Completed</small>
-                    <h5>@Model.CompletedTasks</h5>
+                    <h3 class="mb-0 text-white">@totalMissedSLA</h3>
+                    <small>SLA Missed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3 class="mb-0 text-white">@overallSLA.ToString("F1")%</h3>
+                    <small>Overall SLA Compliance</small>
                 </div>
             </div>
         </div>
     </div>
 
-   @*  <h5 class="mb-3">Technician Performance</h5>
+    <!-- Performance Table -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Technician Performance Breakdown</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Technician</th>
+                        <th>Completed</th>
+                        <th>SLA Met</th>
+                        <th>SLA Missed</th>
+                        <th>SLA Rate</th>
+                        <th>Avg Time</th>
+                        <th>Current Load</th>
+                        <th>In Progress</th>
+                        <th>Priority</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var rank = 1;
+                    }
+                    @foreach (var perf in Model.TechnicianPerformances)
+                    {
+                        <tr>
+                            <td>
+                                @if (rank == 1)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-trophy-fill"></i> #@rank
+                                    </span>
+                                }
+                                else if (rank <= 3)
+                                {
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-award"></i> #@rank
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-dark">#@rank</span>
+                                }
+                            </td>
+                            <td class="fw-semibold">@perf.TechnicianName</td>
+                            <td>
+                                <span class="badge bg-primary">@perf.TotalDevicesCompleted</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">@perf.DevicesMetSLA</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">@perf.DevicesMissedSLA</span>
+                            </td>
+                            <td>
+                                @if (perf.SLAComplianceRate >= 90)
+                                {
+                                    <span class="badge bg-success">@perf.SLAComplianceRate.ToString("F1")%</span>
+                                }
+                                else if (perf.SLAComplianceRate >= 70)
+                                {
+                                    <span class="badge bg-warning text-dark">@perf.SLAComplianceRate.ToString("F1")%</span>
+                                }
+                                else if (perf.SLAComplianceRate > 0)
+                                {
+                                    <span class="badge bg-danger">@perf.SLAComplianceRate.ToString("F1")%</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">N/A</span>
+                                }
+                            </td>
+                            <td>
+                                @if (perf.AverageCompletionHours > 0)
+                                {
+                                    if (perf.AverageCompletionHours < 24)
+                                    {
+                                        <span>@perf.AverageCompletionHours.ToString("F1") hrs</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@((perf.AverageCompletionHours / 24).ToString("F1")) days</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-info text-dark">@perf.CurrentlyAssigned</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning text-dark">@perf.InProgress</span>
+                            </td>
+                            <td>
+                                @if (perf.CriticalDevices > 0)
+                                {
+                                    <span class="badge bg-danger" title="Critical">@perf.CriticalDevices C</span>
+                                }
+                                @if (perf.HighDevices > 0)
+                                {
+                                    <span class="badge bg-warning text-dark" title="High">@perf.HighDevices H</span>
+                                }
+                                @if (perf.MediumDevices > 0)
+                                {
+                                    <span class="badge bg-info text-dark" title="Medium">@perf.MediumDevices M</span>
+                                }
+                                @if (perf.LowDevices > 0)
+                                {
+                                    <span class="badge bg-secondary" title="Low">@perf.LowDevices L</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="TechnicianDetail"
+                                   asp-route-id="@perf.TechnicianId"
+                                   asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                                   asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Details
+                                </a>
+                            </td>
+                        </tr>
+                        rank++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-    <table class="table table-sm table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>Technician</th>
-                <th>Assigned</th>
-                <th>In Progress</th>
-                <th>Completed</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var t in Model.TechnicianStats)
-            {
-                <tr>
-                    <td>@t.TechnicianName</td>
-                    <td>@t.TotalAssigned</td>
-                    <td>@t.InProgress</td>
-                    <td>@t.Completed</td>
-                </tr>
-            }
-        </tbody>
-    </table> *@
-
+    @if (!Model.TechnicianPerformances.Any())
+    {
+        <div class="alert alert-info mt-4">
+            <i class="bi bi-info-circle"></i> No performance data available for the selected date range.
+        </div>
+    }
 </div>

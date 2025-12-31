@@ -6,7 +6,6 @@
 
 
 <div class="container py-4">
-   
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="mb-0">Device Details</h3>
@@ -19,7 +18,6 @@
                 Back
             </a>
         </div>
-
     </div>
 
     <div class="card">
@@ -73,6 +71,32 @@
                 </div>
 
                 <div class="col-md-6">
+                    <div class="text-muted small">Priority</div>
+                    <div>
+                        @if (Model.Priority == "Critical")
+                        {
+                            <span class="badge bg-danger">
+                                <i class="bi bi-exclamation-triangle-fill"></i> Critical
+                            </span>
+                        }
+                        else if (Model.Priority == "High")
+                        {
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-exclamation-circle-fill"></i> High
+                            </span>
+                        }
+                        else if (Model.Priority == "Medium")
+                        {
+                            <span class="badge bg-info text-dark">Medium</span>
+                        }
+                        else if (Model.Priority == "Low")
+                        {
+                            <span class="badge bg-secondary">Low</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-6">
                     <div class="text-muted small">Manager Approval</div>
                     <div>
                         @if (Model.IsApprovedByManager)
@@ -82,6 +106,63 @@
                         else
                         {
                             <span class="badge bg-warning text-dark">Pending</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Due Date</div>
+                    <div class="fw-semibold">
+                        @if (Model.DueDate != null)
+                        {
+                            @Model.DueDate.Value.ToString("MMMM dd, yyyy 'at' hh:mm tt")
+                        }
+                        else
+                        {
+                            <span class="text-muted">No deadline set</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">SLA Status</div>
+                    <div>
+                        @{
+                            var slaStatus = Model.GetSLAStatus();
+                        }
+                        @if (slaStatus == "Overdue")
+                        {
+                            <span class="badge bg-danger">
+                                <i class="bi bi-alarm-fill"></i> Overdue
+                            </span>
+                        }
+                        else if (slaStatus == "At Risk")
+                        {
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-clock-fill"></i> At Risk
+                            </span>
+                        }
+                        else if (slaStatus == "On Time")
+                        {
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle-fill"></i> On Time
+                            </span>
+                        }
+                        else if (slaStatus == "Met SLA")
+                        {
+                            <span class="badge bg-success">
+                                <i class="bi bi-trophy-fill"></i> Met SLA
+                            </span>
+                        }
+                        else if (slaStatus == "Missed SLA")
+                        {
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle-fill"></i> Missed SLA
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">No Due Date</span>
                         }
                     </div>
                 </div>
@@ -125,5 +206,210 @@
         </div>
     </div>
 
+    <!-- Diagnosis History Section -->
+    @if (Model.Diagnoses?.Any() == true)
+    {
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Diagnosis History</h5>
+            </div>
+            <div class="card-body">
+                @foreach (var diag in Model.Diagnoses.OrderByDescending(x => x.CreatedAt))
+                {
+                    <div class="border rounded p-3 mb-3 bg-white shadow-sm">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="text-muted small">Title</div>
+                                <div class="fw-semibold">@diag.Title</div>
+                            </div>
+
+                            <div class="col-md-5">
+                                <div class="text-muted small">Condition Details</div>
+                                <div>@diag.Description</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="text-muted small">Recommended Action</div>
+                                <div>@(diag.Recommendation ?? "N/A")</div>
+                            </div>
+                        </div>
+
+                        <hr class="my-2" />
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i>
+                                Created: @diag.CreatedAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")
+                            </small>
+
+                            @if (diag.TechnicianId != null)
+                            {
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i>
+                                    By: @(diag.Technician?.FullName ?? "Unknown Technician")
+                                </small>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Diagnosis History</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">No diagnoses recorded for this device yet.</p>
+            </div>
+        </div>
+    }
+
+    <!-- Device History Timeline -->
+    @{
+        var history = ViewBag.History as List<DeviceManager.Models.DeviceHistory>;
+    }
+
+    @if (history?.Any() == true)
+    {
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Device History Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    @foreach (var item in history)
+                    {
+                        <div class="timeline-item mb-4">
+                            <div class="d-flex">
+                                <div class="timeline-marker me-3">
+                                    @if (item.Action == "Created")
+                                    {
+                                        <div class="timeline-icon bg-primary">
+                                            <i class="bi bi-plus-circle text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "Assigned")
+                                    {
+                                        <div class="timeline-icon bg-info">
+                                            <i class="bi bi-person-check text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "StatusChanged")
+                                    {
+                                        <div class="timeline-icon bg-warning">
+                                            <i class="bi bi-arrow-left-right text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "PriorityChanged")
+                                    {
+                                        <div class="timeline-icon bg-orange">
+                                            <i class="bi bi-exclamation-triangle text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "DueDateChanged")
+                                    {
+                                        <div class="timeline-icon bg-secondary">
+                                            <i class="bi bi-calendar-event text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "DiagnosisAdded")
+                                    {
+                                        <div class="timeline-icon bg-success">
+                                            <i class="bi bi-file-medical text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "DiagnosisEdited")
+                                    {
+                                        <div class="timeline-icon bg-info">
+                                            <i class="bi bi-pencil text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "DiagnosisDeleted")
+                                    {
+                                        <div class="timeline-icon bg-danger">
+                                            <i class="bi bi-trash text-white"></i>
+                                        </div>
+                                    }
+                                    else if (item.Action == "Approved")
+                                    {
+                                        <div class="timeline-icon bg-success">
+                                            <i class="bi bi-check-circle text-white"></i>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="timeline-icon bg-secondary">
+                                            <i class="bi bi-dot text-white"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h6 class="mb-0">@item.Description</h6>
+                                        <small class="text-muted">
+                                            @item.Timestamp.ToString("MMM dd, yyyy 'at' hh:mm tt")
+                                        </small>
+                                    </div>
+
+                                    <p class="text-muted mb-0">
+                                        <small>
+                                            <i class="bi bi-person"></i> @item.PerformedByName
+                                        </small>
+                                    </p>
+
+                                    @if (!string.IsNullOrEmpty(item.OldValue) && !string.IsNullOrEmpty(item.NewValue))
+                                    {
+                                        <small class="text-muted">
+                                            <span class="badge bg-light text-dark">@item.OldValue</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                            <span class="badge bg-light text-dark">@item.NewValue</span>
+                                        </small>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .timeline {
+                position: relative;
+            }
+
+            .timeline-item {
+                position: relative;
+            }
+
+                .timeline-item:not(:last-child)::before {
+                    content: '';
+                    position: absolute;
+                    left: 20px;
+                    top: 40px;
+                    bottom: -20px;
+                    width: 2px;
+                    background: #dee2e6;
+                }
+
+            .timeline-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+            }
+
+            .bg-orange {
+                background-color: #fd7e14 !important;
+            }
+        </style>
+    }
 
 </div>

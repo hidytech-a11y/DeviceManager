@@ -255,24 +255,31 @@ namespace DeviceManager.Controllers
                 User.IsInRole("Admin") && _override.IsEnabled();
 
             IQueryable<Device> query = _context.Devices
-                .Include(d => d.DeviceType);
+                .Include(d => d.DeviceType)
+                .Include(d => d.Diagnoses);
 
             if (!isAdminOverride)
             {
                 var userId = _userManager.GetUserId(User);
-                if (string.IsNullOrEmpty(userId)) return Unauthorized();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
 
                 var tech = await _context.Technicians
                     .FirstOrDefaultAsync(t => t.IdentityUserId == userId && !t.IsDeleted);
 
-                if (tech == null) return Forbid();
+                if (tech == null)
+                    return Forbid();
 
                 query = query.Where(d => d.TechnicianId == tech.Id);
             }
 
-            var devices = await query.ToListAsync();
+            var devices = await query
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+
             return View(devices);
         }
+
 
         /* ---------------- UPDATE STATUS ---------------- */
 
@@ -319,5 +326,35 @@ namespace DeviceManager.Controllers
 
             return RedirectToAction(nameof(MyTasks));
         }
+
+        [Authorize(Policy = "TechnicianOrAdminOverride")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddDiagnosis(
+            int deviceId,
+            string title,
+            string description,
+            string recommendation)
+        {
+            var device = await _context.Devices.FindAsync(deviceId);
+            if (device == null)
+                return NotFound();
+
+            var diagnosis = new Diagnosis
+            {
+                DeviceId = deviceId,
+                Title = title,
+                Description = description,
+                Recommendation = recommendation,
+                CreatedBy = User.Identity!.Name!
+            };
+
+            _context.Diagnoses.Add(diagnosis);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("MyTasks");
+        }
+
+
     }
 }

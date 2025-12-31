@@ -1,12 +1,8 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using DeviceManager.Data;
+﻿using DeviceManager.Data;
 using DeviceManager.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ClosedXML.Excel;
-
 
 namespace DeviceManager.Controllers
 {
@@ -20,110 +16,122 @@ namespace DeviceManager.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        // GET: Reports/Index
+        public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, string sortBy = "completed")
         {
-            var devices = _context.Devices.AsQueryable();
+            // Default to last 30 days if no dates provided
+            startDate ??= DateTime.UtcNow.AddDays(-30);
+            endDate ??= DateTime.UtcNow;
 
-            var model = new ReportsViewModel
+            var technicians = await _context.Technicians.ToListAsync();
+            var performances = new List<TechnicianPerformanceViewModel>();
+
+            foreach (var tech in technicians)
             {
-                TotalDevices = await devices.CountAsync(),
-                ActiveDevices = await devices.CountAsync(d => d.Status == "Active"),
-                InactiveDevices = await devices.CountAsync(d => d.Status == "Inactive"),
+                // Get all devices for this technician
+                var allDevices = await _context.Devices
+                    .Where(d => d.TechnicianId == tech.Id)
+                    .ToListAsync();
 
-                AssignedDevices = await devices.CountAsync(d => d.TechnicianId != null),
-                UnassignedDevices = await devices.CountAsync(d => d.TechnicianId == null),
+                // Get completed devices in date range
+                var completedDevices = allDevices
+                    .Where(d => d.CompletedAt != null &&
+                                d.CompletedAt >= startDate &&
+                                d.CompletedAt <= endDate)
+                    .ToList();
 
-                AssignedTasks = await devices.CountAsync(d => d.WorkStatus == "Assigned"),
-                InProgressTasks = await devices.CountAsync(d => d.WorkStatus == "InProgress"),
-                CompletedTasks = await devices.CountAsync(d => d.WorkStatus == "Done"),
+                // Calculate SLA metrics
+                var devicesWithDueDate = completedDevices.Where(d => d.DueDate != null).ToList();
+                var metSLA = devicesWithDueDate.Count(d => d.CompletedAt <= d.DueDate);
+                var missedSLA = devicesWithDueDate.Count(d => d.CompletedAt > d.DueDate);
 
-                PendingApprovals = await devices.CountAsync(
-                    d => d.WorkStatus == "Done" && !d.IsApprovedByManager
-                ),
-                ApprovedTasks = await devices.CountAsync(d => d.IsApprovedByManager)
+                // Calculate average completion time
+                var completionTimes = completedDevices
+                    .Where(d => d.CompletedAt != null)
+                    .Select(d =>
+                    {
+                        if (d.DueDate != null)
+                        {
+                            return (d.CompletedAt!.Value - d.DueDate.Value).TotalHours;
+                        }
+                        else
+                        {
+                            // If DueDate is null, use 0 or another appropriate value
+                            return 0.0;
+                        }
+                    })
+                    .ToList();
+
+                var avgCompletionHours = completionTimes.Any() ? completionTimes.Average() : 0;
+
+                // Get current workload
+                var currentDevices = allDevices.Where(d => d.CompletedAt == null).ToList();
+
+                var performance = new TechnicianPerformanceViewModel
+                {
+                    TechnicianId = tech.Id,
+                    TechnicianName = tech.FullName,
+                    TotalDevicesCompleted = completedDevices.Count,
+                    DevicesMetSLA = metSLA,
+                    DevicesMissedSLA = missedSLA,
+                    SLAComplianceRate = devicesWithDueDate.Any() ? (double)metSLA / devicesWithDueDate.Count * 100 : 0,
+                    AverageCompletionHours = Math.Abs(avgCompletionHours),
+                    CurrentlyAssigned = currentDevices.Count,
+                    InProgress = currentDevices.Count(d => d.WorkStatus == "InProgress"),
+                    WaitingApproval = currentDevices.Count(d => d.WorkStatus == "Done" && !d.IsApprovedByManager),
+                    CriticalDevices = currentDevices.Count(d => d.Priority == "Critical"),
+                    HighDevices = currentDevices.Count(d => d.Priority == "High"),
+                    MediumDevices = currentDevices.Count(d => d.Priority == "Medium"),
+                    LowDevices = currentDevices.Count(d => d.Priority == "Low")
+                };
+
+                performances.Add(performance);
+            }
+
+            // Sort based on selected criteria
+            performances = sortBy switch
+            {
+                "completed" => performances.OrderByDescending(p => p.TotalDevicesCompleted).ToList(),
+                "sla" => performances.OrderByDescending(p => p.SLAComplianceRate).ToList(),
+                "speed" => performances.OrderBy(p => p.AverageCompletionHours).ToList(),
+                "workload" => performances.OrderByDescending(p => p.CurrentlyAssigned).ToList(),
+                _ => performances.OrderByDescending(p => p.TotalDevicesCompleted).ToList()
             };
 
-            model.TechnicianStats = await _context.Technicians
-                .Select(t => new TechnicianReportItem
-                {
-                    TechnicianName = t.FullName,
-                    TotalAssigned = t.Devices.Count(),
-                    InProgress = t.Devices.Count(d => d.WorkStatus == "InProgress"),
-                    Completed = t.Devices.Count(d => d.WorkStatus == "Done")
-                })
-                .ToListAsync();
+            var viewModel = new PerformanceReportViewModel
+            {
+                TechnicianPerformances = performances,
+                StartDate = startDate,
+                EndDate = endDate,
+                SortBy = sortBy
+            };
 
-            return View(model);
+            return View(viewModel);
         }
 
-        [Authorize(Roles = "Admin,Manager")]
-        public async Task<IActionResult> ExportExcel()
+        // GET: Reports/TechnicianDetail/{id}
+        public async Task<IActionResult> TechnicianDetail(int id, DateTime? startDate, DateTime? endDate)
         {
-            using var workbook = new XLWorkbook();
-            var sheet = workbook.Worksheets.Add("System Report");
+            startDate ??= DateTime.UtcNow.AddDays(-30);
+            endDate ??= DateTime.UtcNow;
 
-            sheet.Cell(1, 1).Value = "Metric";
-            sheet.Cell(1, 2).Value = "Value";
+            var technician = await _context.Technicians.FindAsync(id);
+            if (technician == null) return NotFound();
 
-            sheet.Cell(2, 1).Value = "Total Devices";
-            sheet.Cell(2, 2).Value = await _context.Devices.CountAsync();
-
-            sheet.Cell(3, 1).Value = "Active Devices";
-            sheet.Cell(3, 2).Value = await _context.Devices.CountAsync(d => d.Status == "Active");
-
-            sheet.Cell(4, 1).Value = "Inactive Devices";
-            sheet.Cell(4, 2).Value = await _context.Devices.CountAsync(d => d.Status == "Inactive");
-
-            sheet.Cell(5, 1).Value = "Assigned Tasks";
-            sheet.Cell(5, 2).Value = await _context.Devices.CountAsync(d => d.WorkStatus == "Assigned");
-
-            sheet.Cell(6, 1).Value = "In Progress Tasks";
-            sheet.Cell(6, 2).Value = await _context.Devices.CountAsync(d => d.WorkStatus == "InProgress");
-
-            sheet.Cell(7, 1).Value = "Completed Tasks";
-            sheet.Cell(7, 2).Value = await _context.Devices.CountAsync(d => d.WorkStatus == "Done");
-
-            sheet.Cell(8, 1).Value = "Pending Approvals";
-            sheet.Cell(8, 2).Value = await _context.Devices.CountAsync(
-                d => d.WorkStatus == "Done" && !d.IsApprovedByManager
-            );
-
-            sheet.Columns().AdjustToContents();
-
-            using var stream = new MemoryStream();
-            workbook.SaveAs(stream);
-            stream.Position = 0;
-
-            return File(
-                stream.ToArray(),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "Device_Report.xlsx"
-            );
-        }
-
-        [Authorize(Roles = " Admin,Manager,Viewer")]
-        public async Task<IActionResult> TechnicianPerformance()
-        {
-            var data = await _context.Technicians
-                .Select(t => new TechnicianPerformanceViewModel
-                {
-                    TechnicianName = t.FullName,
-                    TotalAssigned = t.Devices.Count(),
-                    InProgress = t.Devices.Count(d => d.WorkStatus == "InProgress"),
-                    Completed = t.Devices.Count(d => d.WorkStatus == "Done"),
-                    Approved = t.Devices.Count(d => d.IsApprovedByManager),
-                    PendingApproval = t.Devices.Count(
-                        d => d.WorkStatus == "Done" && !d.IsApprovedByManager
-                    )
-                })
-                .OrderBy(t => t.TechnicianName)
+            var devices = await _context.Devices
+                .Include(d => d.DeviceType)
+                .Where(d => d.TechnicianId == id &&
+                            d.CompletedAt != null &&
+                            d.CompletedAt >= startDate &&
+                            d.CompletedAt <= endDate)
+                .OrderByDescending(d => d.CompletedAt)
                 .ToListAsync();
-            return View(data);
+
+            ViewBag.Technician = technician;
+            ViewBag.StartDate = startDate;
+            ViewBag.EndDate = endDate;
+
+            return View(devices);
         }
     }
-
-
 }
- 
-
-

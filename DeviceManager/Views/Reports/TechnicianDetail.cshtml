@@ -1,0 +1,206 @@
+﻿@model IEnumerable<DeviceManager.Models.Device>
+
+@{
+    ViewData["Title"] = "Technician Detail Report";
+    var technician = ViewBag.Technician as DeviceManager.Models.Technician;
+    var startDate = ViewBag.StartDate as DateTime?;
+    var endDate = ViewBag.EndDate as DateTime?;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-person-badge"></i> @technician.FullName - Performance Detail
+        </h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+    </div>
+
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-calendar-range"></i>
+        Showing data from <strong>@startDate?.ToString("MMM dd, yyyy")</strong> to <strong>@endDate?.ToString("MMM dd, yyyy")</strong>
+    </div>
+
+    <!-- Summary Statistics -->
+    @{
+        var totalDevices = Model.Count();
+        var metSLA = Model.Count(d => d.DueDate != null && d.CompletedAt <= d.DueDate);
+        var missedSLA = Model.Count(d => d.DueDate != null && d.CompletedAt > d.DueDate);
+        var slaRate = (metSLA + missedSLA) > 0 ? (double)metSLA / (metSLA + missedSLA) * 100 : 0;
+
+        var completionTimes = Model
+        .Where(d => d.CompletedAt != null && d.DueDate != null)
+        .Select(d => (d.CompletedAt!.Value - d.DueDate!.Value).TotalHours)
+        .ToList();
+        var avgTime = completionTimes.Any() ? Math.Abs(completionTimes.Average()) : 0;
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">@totalDevices</h3>
+                    <p class="mb-0 text-muted">Devices Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">@metSLA</h3>
+                    <p class="mb-0 text-muted">SLA Met</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-danger">@missedSLA</h3>
+                    <p class="mb-0 text-muted">SLA Missed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="@(slaRate >= 90 ? "text-success" : slaRate >= 70 ? "text-warning" : "text-danger")">
+                        @slaRate.ToString("F1")%
+                    </h3>
+                    <p class="mb-0 text-muted">SLA Compliance</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Devices Table -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Completed Devices</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Device Name</th>
+                        <th>Serial Number</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Completed At</th>
+                        <th>Time Taken</th>
+                        <th>SLA Status</th>
+                        <th>Approved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var device in Model)
+                    {
+                        var timeTaken = device.DueDate != null && device.CompletedAt != null
+                        ? (device.CompletedAt.Value - device.DueDate.Value).TotalHours
+                        : 0;
+                        var slaStatus = device.GetSLAStatus();
+
+                        <tr>
+                            <td>
+                                <a asp-controller="Devices"
+                                   asp-action="Details"
+                                   asp-route-id="@device.Id">
+                                    @device.Name
+                                </a>
+                            </td>
+                            <td>@device.SerialNumber</td>
+                            <td>@device.DeviceType?.Name</td>
+                            <td>
+                                @if (device.Priority == "Critical")
+                                {
+                                    <span class="badge bg-danger">Critical</span>
+                                }
+                                else if (device.Priority == "High")
+                                {
+                                    <span class="badge bg-warning text-dark">High</span>
+                                }
+                                else if (device.Priority == "Medium")
+                                {
+                                    <span class="badge bg-info text-dark">Medium</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Low</span>
+                                }
+                            </td>
+                            <td>
+                                @if (device.DueDate != null)
+                                {
+                                    @device.DueDate.Value.ToString("MMM dd, yyyy")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td>
+                                @device.CompletedAt?.ToString("MMM dd, yyyy HH:mm")
+                            </td>
+                            <td>
+                                @if (device.DueDate != null && device.CompletedAt != null)
+                                {
+                                    var hours = Math.Abs(timeTaken);
+                                    if (hours < 24)
+                                    {
+                                        <span>@hours.ToString("F1") hrs</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@(hours / 24).ToString("F1") days</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td>
+                                @if (slaStatus == "Met SLA")
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Met SLA
+                                    </span>
+                                }
+                                else if (slaStatus == "Missed SLA")
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-x-circle"></i> Missed SLA
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">No Due Date</span>
+                                }
+                            </td>
+                            <td>
+                                @if (device.IsApprovedByManager)
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-lg"></i> Yes
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-4">
+            <i class="bi bi-info-circle"></i> No completed devices found for this technician in the selected date range.
+        </div>
+    }
+</div>

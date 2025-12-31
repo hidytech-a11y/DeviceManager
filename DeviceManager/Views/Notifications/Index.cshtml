@@ -1,0 +1,98 @@
+﻿@model IEnumerable<DeviceManager.Models.Notification>
+
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Notifications</h2>
+
+        @if (Model.Any(n => !n.IsRead))
+        {
+            <form asp-action="MarkAllAsRead" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-check-all"></i> Mark All as Read
+                </button>
+            </form>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> You have no notifications yet.
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="list-group list-group-flush">
+                @foreach (var notification in Model)
+                {
+                    <div class="list-group-item @(!notification.IsRead ? "bg-light" : "")">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    @if (notification.Type == "Success")
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    }
+                                    else if (notification.Type == "Warning")
+                                    {
+                                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                                    }
+                                    else if (notification.Type == "Danger")
+                                    {
+                                        <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-info-circle-fill text-info me-2"></i>
+                                    }
+
+                                    <h6 class="mb-0 fw-semibold">@notification.Title</h6>
+
+                                    @if (!notification.IsRead)
+                                    {
+                                        <span class="badge bg-primary ms-2">New</span>
+                                    }
+                                </div>
+
+                                <p class="mb-2 text-muted">@Html.Raw(notification.Message)</p>
+
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> @notification.CreatedAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")
+                                </small>
+                            </div>
+
+                            <div class="ms-3 d-flex gap-2">
+                                @if (notification.DeviceId != null)
+                                {
+                                    <a asp-controller="Devices"
+                                       asp-action="Details"
+                                       asp-route-id="@notification.DeviceId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View Device
+                                    </a>
+                                }
+
+                                <form asp-action="Delete"
+                                      asp-route-id="@notification.Id"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Delete this notification?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

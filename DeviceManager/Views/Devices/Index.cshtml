@@ -19,7 +19,7 @@
 
             <form method="get" class="row g-2 align-items-end">
 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Search</label>
                     <input name="search"
                            value="@Model.Search"
@@ -27,7 +27,7 @@
                            placeholder="Name or Serial" />
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Type</label>
                     <select name="typeFilter" class="form-select form-select-sm">
                         <option value="">All</option>
@@ -50,12 +50,37 @@
                 </div>
 
                 <div class="col-md-2">
+                    <label class="form-label">Priority</label>
+                    <select name="priorityFilter" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="Critical" selected="@(Model.PriorityFilter == "Critical")">Critical</option>
+                        <option value="High" selected="@(Model.PriorityFilter == "High")">High</option>
+                        <option value="Medium" selected="@(Model.PriorityFilter == "Medium")">Medium</option>
+                        <option value="Low" selected="@(Model.PriorityFilter == "Low")">Low</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">SLA Status</label>
+                    <select name="slaFilter" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="Overdue" selected="@(Model.SLAFilter == "Overdue")">Overdue</option>
+                        <option value="AtRisk" selected="@(Model.SLAFilter == "AtRisk")">At Risk</option>
+                        <option value="OnTime" selected="@(Model.SLAFilter == "OnTime")">On Time</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
                     <label class="form-label">Sort</label>
                     <select name="sortOrder" class="form-select form-select-sm">
                         <option value="">Name</option>
                         <option value="name_desc" selected="@(Model.SortOrder == "name_desc")">Name Desc</option>
                         <option value="type" selected="@(Model.SortOrder == "type")">Type</option>
                         <option value="type_desc" selected="@(Model.SortOrder == "type_desc")">Type Desc</option>
+                        <option value="priority" selected="@(Model.SortOrder == "priority")">Priority</option>
+                        <option value="priority_desc" selected="@(Model.SortOrder == "priority_desc")">Priority Desc</option>
+                        <option value="duedate" selected="@(Model.SortOrder == "duedate")">Due Date</option>
+                        <option value="duedate_desc" selected="@(Model.SortOrder == "duedate_desc")">Due Date Desc</option>
                     </select>
                 </div>
 
@@ -85,6 +110,9 @@
                         <th>Name</th>
                         <th>Type</th>
                         <th>Serial</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>SLA Status</th>
                         <th>Status</th>
                         <th>Technician</th>
                         <th>Work Status</th>
@@ -99,6 +127,80 @@
                             <td>@d.Name</td>
                             <td>@d.DeviceType?.Name</td>
                             <td>@d.SerialNumber</td>
+
+                            <td>
+                                @if (d.Priority == "Critical")
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Critical
+                                    </span>
+                                }
+                                else if (d.Priority == "High")
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-exclamation-circle-fill"></i> High
+                                    </span>
+                                }
+                                else if (d.Priority == "Medium")
+                                {
+                                    <span class="badge bg-info text-dark">Medium</span>
+                                }
+                                else if (d.Priority == "Low")
+                                {
+                                    <span class="badge bg-secondary">Low</span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (d.DueDate != null)
+                                {
+                                    <span>@d.DueDate.Value.ToString("MMM dd, yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No deadline</span>
+                                }
+                            </td>
+
+                            <td>
+                                @{
+                                    var slaStatus = d.GetSLAStatus();
+                                }
+                                @if (slaStatus == "Overdue")
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-alarm-fill"></i> Overdue
+                                    </span>
+                                }
+                                else if (slaStatus == "At Risk")
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock-fill"></i> At Risk
+                                    </span>
+                                }
+                                else if (slaStatus == "On Time")
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle-fill"></i> On Time
+                                    </span>
+                                }
+                                else if (slaStatus == "Met SLA")
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-trophy-fill"></i> Met SLA
+                                    </span>
+                                }
+                                else if (slaStatus == "Missed SLA")
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-x-circle-fill"></i> Missed SLA
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">No Due Date</span>
+                                }
+                            </td>
 
                             <td>
                                 @if (d.Status == "Active")
@@ -170,7 +272,7 @@
             {
                 <li class="page-item @(i == Model.PageNumber ? "active" : "")">
                     <a class="page-link"
-                       href="?pageNumber=@i&search=@Model.Search&sortOrder=@Model.SortOrder&typeFilter=@Model.TypeFilter&statusFilter=@Model.StatusFilter">
+                       href="?pageNumber=@i&search=@Model.Search&sortOrder=@Model.SortOrder&typeFilter=@Model.TypeFilter&statusFilter=@Model.StatusFilter&priorityFilter=@Model.PriorityFilter&slaFilter=@Model.SLAFilter">
                         @i
                     </a>
                 </li>

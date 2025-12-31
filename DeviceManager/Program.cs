@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDeviceHistoryService, DeviceHistoryService>();
 
 
 // Database

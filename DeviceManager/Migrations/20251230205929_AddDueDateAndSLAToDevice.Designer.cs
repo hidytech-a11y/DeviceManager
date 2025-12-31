@@ -3,6 +3,7 @@ using System;
 using DeviceManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeviceManager.Migrations
 {
     [DbContext(typeof(DeviceContext))]
-    partial class DeviceContextModelSnapshot : ModelSnapshot
+    [Migration("20251230205929_AddDueDateAndSLAToDevice")]
+    partial class AddDueDateAndSLAToDevice
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.20");
@@ -107,45 +110,6 @@ namespace DeviceManager.Migrations
                     b.ToTable("Devices");
                 });
 
-            modelBuilder.Entity("DeviceManager.Models.DeviceHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("DeviceId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("NewValue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OldValue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PerformedByName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PerformedByUserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeviceId");
-
-                    b.ToTable("DeviceHistories");
-                });
-
             modelBuilder.Entity("DeviceManager.Models.DeviceType", b =>
                 {
                     b.Property<int>("Id")
@@ -220,44 +184,6 @@ namespace DeviceManager.Migrations
                     b.HasIndex("TechnicianId");
 
                     b.ToTable("Diagnoses");
-                });
-
-            modelBuilder.Entity("DeviceManager.Models.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("DeviceId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeviceId");
-
-                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("DeviceManager.Models.Technician", b =>
@@ -500,17 +426,6 @@ namespace DeviceManager.Migrations
                     b.Navigation("Technician");
                 });
 
-            modelBuilder.Entity("DeviceManager.Models.DeviceHistory", b =>
-                {
-                    b.HasOne("DeviceManager.Models.Device", "Device")
-                        .WithMany()
-                        .HasForeignKey("DeviceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Device");
-                });
-
             modelBuilder.Entity("DeviceManager.Models.Diagnosis", b =>
                 {
                     b.HasOne("DeviceManager.Models.Device", "Device")
@@ -526,15 +441,6 @@ namespace DeviceManager.Migrations
                     b.Navigation("Device");
 
                     b.Navigation("Technician");
-                });
-
-            modelBuilder.Entity("DeviceManager.Models.Notification", b =>
-                {
-                    b.HasOne("DeviceManager.Models.Device", "Device")
-                        .WithMany()
-                        .HasForeignKey("DeviceId");
-
-                    b.Navigation("Device");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

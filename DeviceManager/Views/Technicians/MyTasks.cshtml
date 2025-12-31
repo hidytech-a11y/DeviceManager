@@ -12,103 +12,321 @@
     </div>
 }
 
-                 <div class="container py-5">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0">My Assigned Devices</h4>
-                    </div>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">My Assigned Devices</h4>
+    </div>
 
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
-                    @if (!Model.Any())
-                    {
-                        <div class="alert alert-info border-0 shadow-sm">
-                            No devices assigned.
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="card shadow-sm border-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Serial Number</th>
-                                            <th>Type</th>
-                                            <th>Work Status</th>
-                                            <th class="text-end">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var d in Model)
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info border-0 shadow-sm">
+            No devices assigned.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Serial Number</th>
+                            <th>Type</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                            <th>SLA Status</th>
+                            <th>Work Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var device in Model)
+                        {
+                            var panelId = $"diag-{device.Id}";
+
+                            <tr>
+                                <td>@device.Name</td>
+                                <td>@device.SerialNumber</td>
+                                <td>@device.DeviceType?.Name</td>
+
+                                <td>
+                                    @if (device.Priority == "Critical")
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> Critical
+                                        </span>
+                                    }
+                                    else if (device.Priority == "High")
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-exclamation-circle-fill"></i> High
+                                        </span>
+                                    }
+                                    else if (device.Priority == "Medium")
+                                    {
+                                        <span class="badge bg-info text-dark">Medium</span>
+                                    }
+                                    else if (device.Priority == "Low")
+                                    {
+                                        <span class="badge bg-secondary">Low</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (device.DueDate != null)
+                                    {
+                                        <span>@device.DueDate.Value.ToString("MMM dd, yyyy")</span>
+                                        <br />
+                                        <small class="text-muted">@device.DueDate.Value.ToString("hh:mm tt")</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No deadline</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @{
+                                        var slaStatus = device.GetSLAStatus();
+                                    }
+                                    @if (slaStatus == "Overdue")
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-alarm-fill"></i> Overdue
+                                        </span>
+                                    }
+                                    else if (slaStatus == "At Risk")
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-clock-fill"></i> At Risk
+                                        </span>
+                                    }
+                                    else if (slaStatus == "On Time")
+                                    {
+                                        <span class="badge bg-success">On Time</span>
+                                    }
+                                    else if (slaStatus == "Met SLA")
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-trophy-fill"></i> Met SLA
+                                        </span>
+                                    }
+                                    else if (slaStatus == "Missed SLA")
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle-fill"></i> Missed SLA
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">No Due Date</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (device.WorkStatus == "Assigned")
+                                    {
+                                        <span class="badge badge-assigned">Assigned</span>
+                                    }
+                                    else if (device.WorkStatus == "InProgress")
+                                    {
+                                        <span class="badge badge-progress">In Progress</span>
+                                    }
+                                    else if (device.WorkStatus == "Done" && !device.IsApprovedByManager)
+                                    {
+                                        <span class="badge badge-waiting">Waiting Approval</span>
+                                    }
+                                    else if (device.IsApprovedByManager)
+                                    {
+                                        <span class="badge badge-approved">Approved</span>
+                                    }
+                                </td>
+
+                                <td class="text-end">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary"
+                                            onclick="togglePanel('@panelId')">
+                                        Details
+                                    </button>
+
+                                    @if (device.WorkStatus == "Assigned")
+                                    {
+                                        <form class="d-inline"
+                                              asp-controller="Devices"
+                                              asp-action="UpdateStatus"
+                                              method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@device.Id" />
+                                            <input type="hidden" name="status" value="InProgress" />
+                                            <button class="btn btn-outline-primary btn-sm">
+                                                Start
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (device.WorkStatus == "InProgress")
+                                    {
+                                        <form class="d-inline"
+                                              asp-controller="Devices"
+                                              asp-action="UpdateStatus"
+                                              method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@device.Id" />
+                                            <input type="hidden" name="status" value="Done" />
+                                            <button class="btn btn-outline-success btn-sm">
+                                                Mark Done
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+
+                            <!-- Diagnosis details panel -->
+                            <tr id="@panelId" class="diagnosis-row" style="display:none;">
+                                <td colspan="5">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h6 class="mb-3">Add Diagnosis</h6>
+
+                                        <form asp-controller="Devices"
+                                              asp-action="SaveDiagnosis"
+                                              method="post">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden" name="DeviceId" value="@device.Id" />
+
+                                            <div class="row g-2">
+                                                <div class="col-md-3">
+                                                    <input name="Title"
+                                                           class="form-control"
+                                                           required
+                                                           placeholder="Diagnosis title" />
+                                                </div>
+
+                                                <div class="col-md-5">
+                                                    <textarea name="Description"
+                                                      class="form-control"
+                                                      rows="2"
+                                                      required
+                                                      placeholder="Condition details"></textarea>
+                                                </div>
+
+                                                <div class="col-md-3">
+                                                    <input name="Recommendation"
+                                                           class="form-control"
+                                                           placeholder="Recommended action" />
+                                                </div>
+
+                                                <div class="col-md-1 d-grid">
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+
+                                        @if (device.Diagnoses?.Any() == true)
                                         {
-                                            <tr>
-                                                <td>@d.Name</td>
-                                                <td>@d.SerialNumber</td>
-                                                <td>@d.DeviceType?.Name</td>
+                                            <hr class="my-3" />
+                                            <h6 class="mb-3">Existing Diagnoses</h6>
 
-                                                <td>
-                                                    @if (d.WorkStatus == "Assigned")
-                                                    {
-                                                        <span class="badge badge-assigned">Assigned</span>
-                                                    }
-                                                    else if (d.WorkStatus == "InProgress")
-                                                    {
-                                                        <span class="badge badge-progress">In Progress</span>
-                                                    }
-                                                    else if (d.WorkStatus == "Done" && !d.IsApprovedByManager)
-                                                    {
-                                                        <span class="badge badge-waiting">Waiting Approval</span>
-                                                    }
-                                                    else if (d.IsApprovedByManager)
-                                                    {
-                                                        <span class="badge badge-approved">Approved</span>
-                                                    }
-                                                </td>
+                                            @foreach (var diag in device.Diagnoses.OrderByDescending(x => x.CreatedAt))
+                                            {
+                                                <div class="border rounded p-3 mb-2 bg-white">
 
-                                                <td class="text-end">
-                                                    @if (d.WorkStatus == "Assigned")
-                                                    {
-                                                        <form class="d-inline"
-                                                              asp-controller="Devices"
-                                                              asp-action="UpdateStatus"
-                                                              method="post">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="id" value="@d.Id" />
-                                                            <input type="hidden" name="status" value="InProgress" />
-                                                            <button class="btn btn-outline-primary btn-sm">
-                                                                Start
-                                                            </button>
-                                                        </form>
-                                                    }
-                                                    else if (d.WorkStatus == "InProgress")
-                                                    {
-                                                        <form class="d-inline"
-                                                              asp-controller="Devices"
-                                                              asp-action="UpdateStatus"
-                                                              method="post">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="id" value="@d.Id" />
-                                                            <input type="hidden" name="status" value="Done" />
-                                                            <button class="btn btn-outline-success btn-sm">
-                                                                Mark Done
-                                                            </button>
-                                                        </form>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted">—</span>
-                                                    }
-                                                </td>
-                                            </tr>
+                                                    <form asp-controller="Devices"
+                                                          asp-action="EditDiagnosis"
+                                                          method="post"
+                                                          class="mb-2">
+
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@diag.Id" />
+
+                                                        <div class="row g-2">
+                                                            <div class="col-md-3">
+                                                                <input name="title"
+                                                                       value="@diag.Title"
+                                                                       class="form-control form-control-sm" />
+                                                            </div>
+
+                                                            <div class="col-md-5">
+                                                                <textarea name="description"
+                                                          class="form-control form-control-sm"
+                                                          rows="2">@diag.Description</textarea>
+                                                            </div>
+
+                                                            <div class="col-md-3">
+                                                                <input name="recommendation"
+                                                                       value="@diag.Recommendation"
+                                                                       class="form-control form-control-sm" />
+                                                            </div>
+
+                                                            <div class="col-md-1 d-grid">
+                                                                <button class="btn btn-outline-primary btn-sm">
+                                                                    Save
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+
+                                                    <form asp-controller="Devices"
+                                                          asp-action="DeleteDiagnosis"
+                                                          method="post"
+                                                          class="text-end">
+
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@diag.Id" />
+
+                                                        <button class="btn btn-outline-danger btn-sm">
+                                                            Delete
+                                                        </button>
+                                                    </form>
+
+                                                    <small class="text-muted d-block mt-2">
+                                                        Created: @diag.CreatedAt.ToString("g")
+                                                    </small>
+                                                </div>
+                                            }
                                         }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <script>
+        function togglePanel(id) {
+            const row = document.getElementById(id);
+            row.style.display = row.style.display === "none" ? "table-row" : "none";
+        }
+
+        // Auto-expand panel if there's a success message (after save)
+        @if (TempData["ExpandDeviceId"] != null)
+        {
+                <text>
+                window.addEventListener('DOMContentLoaded', function() {
+                    const deviceId = '@TempData["ExpandDeviceId"]';
+                    const panelId = 'diag-' + deviceId;
+                    const row = document.getElementById(panelId);
+                    if (row) {
+                        row.style.display = 'table-row';
                     }
+                });
+                </text>
+        }
+    </script>
 
-                    <a asp-controller="Home" asp-action="Index"class="btn btn-secondary mt-4 pb-xl-2">  Back </a>
-
-                </div>
-
-
+</div>

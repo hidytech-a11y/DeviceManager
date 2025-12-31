@@ -2,6 +2,7 @@
 using DeviceManager.Models;
 using DeviceManager.Services;
 using DeviceManager.Services.Logging;
+using DocumentFormat.OpenXml.Office2021.DocumentTasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,8 @@ namespace DeviceManager.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IAuditService _audit;
         private readonly IAdminOverrideService _override;
+        private readonly INotificationService _notificationService;
+        private readonly IDeviceHistoryService _historyService;
         private const int PageSize = 10;
 
         public DevicesController(
@@ -29,24 +32,30 @@ namespace DeviceManager.Controllers
             ILogger<DevicesController> logger,
             UserManager<IdentityUser> userManager,
             IAuditService audit,
-            IAdminOverrideService overrideService)
+            INotificationService notificationService,
+            IAdminOverrideService overrideService,
+            IDeviceHistoryService historyService)
         {
             _context = context;
             _logger = logger;
             _userManager = userManager;
             _audit = audit;
             _override = overrideService;
+            _notificationService = notificationService;
+            _historyService = historyService;
         }
 
         // LIST
         [Authorize(Roles = "Admin,Technician,Viewer,Manager")]
         public async Task<IActionResult> Index(
-            string search,
-            string sortOrder,
-            string typeFilter,
-            string statusFilter,
-            int? technicianId,
-            int pageNumber = 1)
+                 string search,
+                 string sortOrder,
+                 string typeFilter,
+                 string statusFilter,
+                 string priorityFilter,
+                 string slaFilter,  // Add this parameter
+                 int? technicianId,
+                 int pageNumber = 1)
         {
             var query = _context.Devices
                 .Include(d => d.DeviceType)
@@ -58,7 +67,6 @@ namespace DeviceManager.Controllers
                 var user = await _userManager.GetUserAsync(User);
                 var tech = await _context.Technicians
                     .FirstOrDefaultAsync(t => t.IdentityUserId == user.Id);
-
                 query = tech == null
                     ? query.Where(d => false)
                     : query.Where(d => d.TechnicianId == tech.Id);
@@ -73,22 +81,45 @@ namespace DeviceManager.Controllers
             if (!string.IsNullOrWhiteSpace(statusFilter))
                 query = query.Where(d => d.Status == statusFilter);
 
+            if (!string.IsNullOrWhiteSpace(priorityFilter))
+                query = query.Where(d => d.Priority == priorityFilter);
+
             if (technicianId.HasValue)
                 query = query.Where(d => d.TechnicianId == technicianId);
 
-            query = sortOrder switch
+            // Get all devices first for SLA filtering (needs to be done in memory)
+            var allDevices = await query.ToListAsync();
+
+            // Apply SLA filter
+            if (!string.IsNullOrWhiteSpace(slaFilter))
             {
-                "name_desc" => query.OrderByDescending(d => d.Name),
-                "type" => query.OrderBy(d => d.DeviceType!.Name),
-                "type_desc" => query.OrderByDescending(d => d.DeviceType!.Name),
-                _ => query.OrderBy(d => d.Name)
+                allDevices = slaFilter switch
+                {
+                    "Overdue" => allDevices.Where(d => d.GetSLAStatus() == "Overdue").ToList(),
+                    "AtRisk" => allDevices.Where(d => d.GetSLAStatus() == "At Risk").ToList(),
+                    "OnTime" => allDevices.Where(d => d.GetSLAStatus() == "On Time").ToList(),
+                    _ => allDevices
+                };
+            }
+
+            // Apply sorting
+            allDevices = sortOrder switch
+            {
+                "name_desc" => allDevices.OrderByDescending(d => d.Name).ToList(),
+                "type" => allDevices.OrderBy(d => d.DeviceType?.Name).ToList(),
+                "type_desc" => allDevices.OrderByDescending(d => d.DeviceType?.Name).ToList(),
+                "priority" => allDevices.OrderBy(d => d.Priority == "Critical" ? 1 : d.Priority == "High" ? 2 : d.Priority == "Medium" ? 3 : 4).ToList(),
+                "priority_desc" => allDevices.OrderByDescending(d => d.Priority == "Critical" ? 1 : d.Priority == "High" ? 2 : d.Priority == "Medium" ? 3 : 4).ToList(),
+                "duedate" => allDevices.OrderBy(d => d.DueDate ?? DateTime.MaxValue).ToList(),
+                "duedate_desc" => allDevices.OrderByDescending(d => d.DueDate ?? DateTime.MinValue).ToList(),
+                _ => allDevices.OrderBy(d => d.Name).ToList()
             };
 
-            var totalItems = await query.CountAsync();
-            var devices = await query
+            var totalItems = allDevices.Count;
+            var devices = allDevices
                 .Skip((pageNumber - 1) * PageSize)
                 .Take(PageSize)
-                .ToListAsync();
+                .ToList();
 
             var vm = new DeviceListViewModel
             {
@@ -99,14 +130,17 @@ namespace DeviceManager.Controllers
                 SortOrder = sortOrder,
                 TypeFilter = typeFilter,
                 StatusFilter = statusFilter,
+                PriorityFilter = priorityFilter,
+                SLAFilter = slaFilter,  // Add this line
                 TechnicianId = technicianId
             };
 
             ViewBag.AvailableTypes = await _context.DeviceTypes.ToListAsync();
             ViewBag.Technicians = await _context.Technicians.ToListAsync();
-
             return View(vm);
         }
+
+        
 
         // CREATE
         [Authorize(Roles = "Admin")]
@@ -141,6 +175,13 @@ namespace DeviceManager.Controllers
             _context.Devices.Add(device);
             await _context.SaveChangesAsync();
 
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user.Id;
+            var userName = user.Email ?? "Unknown";
+
+            // Log history
+            await _historyService.LogDeviceCreatedAsync(device.Id, userId, userName);
+
             await _audit.LogAsync(
                 device.Id,
                 "Device Created",
@@ -149,6 +190,21 @@ namespace DeviceManager.Controllers
                 User.Identity.Name
             );
 
+            if (device.TechnicianId != null)
+            {
+                var technician = await _context.Technicians
+                    .FirstOrDefaultAsync(t => t.Id == device.TechnicianId);
+
+                if (technician?.IdentityUserId != null)
+                {
+                    // Log technician assignment
+                    await _historyService.LogTechnicianAssignedAsync(
+                        device.Id, userId, userName, null, technician.FullName);
+
+                    await _notificationService.NotifyDeviceAssignedAsync(device.Id, technician.IdentityUserId);
+                }
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -156,7 +212,9 @@ namespace DeviceManager.Controllers
         [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int id)
         {
-            var device = await _context.Devices.FindAsync(id);
+            var device = await _context.Devices
+                .Include(d => d.Technician)
+                .FirstOrDefaultAsync(d => d.Id == id);
             if (device == null) return NotFound();
 
             LoadDropdowns(device.TechnicianId, device.DeviceTypeId);
@@ -168,34 +226,63 @@ namespace DeviceManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Device device)
         {
-            var existing = await _context.Devices.FindAsync(device.Id);
+            var existing = await _context.Devices
+                .Include(d => d.Technician)
+                .FirstOrDefaultAsync(d => d.Id == device.Id);
+
             if (existing == null) return NotFound();
 
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user.Id;
+            var userName = user.Email ?? "Unknown";
+
             var oldStatus = existing.Status;
-            var oldTech = existing.TechnicianId;
+            var oldTechId = existing.TechnicianId;
+            var oldTechName = existing.Technician?.FullName;
+            var oldPriority = existing.Priority;
+            var oldDueDate = existing.DueDate;
 
             existing.Name = device.Name;
             existing.SerialNumber = device.SerialNumber;
             existing.Status = device.Status;
+            existing.Priority = device.Priority;
+            existing.DueDate = device.DueDate;
             existing.DeviceTypeId = device.DeviceTypeId == 0 ? null : device.DeviceTypeId;
 
-            if (oldTech != device.TechnicianId)
+            // Track technician change
+            if (oldTechId != device.TechnicianId)
             {
                 existing.TechnicianId = device.TechnicianId == 0 ? null : device.TechnicianId;
                 existing.WorkStatus = existing.TechnicianId == null ? null : "Assigned";
                 existing.IsApprovedByManager = false;
 
+                var newTechnician = existing.TechnicianId != null
+                    ? await _context.Technicians.FindAsync(existing.TechnicianId)
+                    : null;
+
+                await _historyService.LogTechnicianAssignedAsync(
+                    existing.Id, userId, userName, oldTechName, newTechnician?.FullName ?? "Unassigned");
+
                 await _audit.LogAsync(
                     existing.Id,
                     "Technician Changed",
-                    oldTech?.ToString(),
+                    oldTechId?.ToString(),
                     existing.TechnicianId?.ToString(),
                     User.Identity.Name
                 );
+
+                if (newTechnician?.IdentityUserId != null)
+                {
+                    await _notificationService.NotifyDeviceAssignedAsync(device.Id, newTechnician.IdentityUserId);
+                }
             }
 
+            // Track status change
             if (oldStatus != existing.Status)
             {
+                await _historyService.LogStatusChangedAsync(
+                    existing.Id, userId, userName, oldStatus, existing.Status);
+
                 await _audit.LogAsync(
                     existing.Id,
                     "Status Changed",
@@ -203,6 +290,20 @@ namespace DeviceManager.Controllers
                     existing.Status,
                     User.Identity.Name
                 );
+            }
+
+            // Track priority change
+            if (oldPriority != existing.Priority)
+            {
+                await _historyService.LogPriorityChangedAsync(
+                    existing.Id, userId, userName, oldPriority, existing.Priority);
+            }
+
+            // Track due date change
+            if (oldDueDate != existing.DueDate)
+            {
+                await _historyService.LogDueDateChangedAsync(
+                    existing.Id, userId, userName, oldDueDate, existing.DueDate);
             }
 
             await _context.SaveChangesAsync();
@@ -216,9 +317,17 @@ namespace DeviceManager.Controllers
             var device = await _context.Devices
                 .Include(d => d.DeviceType)
                 .Include(d => d.Technician)
+                .Include(d => d.Diagnoses)
+                    .ThenInclude(diag => diag.Technician)
                 .FirstOrDefaultAsync(d => d.Id == id);
-
             if (device == null) return NotFound();
+
+            // Load history for timeline
+            ViewBag.History = await _context.DeviceHistories
+                .Where(h => h.DeviceId == id)
+                .OrderByDescending(h => h.Timestamp)
+                .ToListAsync();
+
             return View(device);
         }
 
@@ -236,10 +345,23 @@ namespace DeviceManager.Controllers
             var device = await _context.Devices.FindAsync(id);
             if (device == null) return NotFound();
 
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user.Id;
+            var userName = user.Email ?? "Unknown";
+
             var old = device.WorkStatus;
             device.WorkStatus = status;
 
+            if (status == "Done")
+            {
+                device.CompletedAt = DateTime.UtcNow;
+                await _notificationService.NotifyDeviceDoneAsync(id);
+            }
+
             await _context.SaveChangesAsync();
+
+            // Log history
+            await _historyService.LogStatusChangedAsync(device.Id, userId, userName, old, status);
 
             await _audit.LogAsync(
                 device.Id,
@@ -276,14 +398,24 @@ namespace DeviceManager.Controllers
                 !(User.IsInRole("Admin") && _override.IsEnabled()))
                 return Forbid();
 
-            var device = await _context.Devices.FindAsync(id);
+            var device = await _context.Devices
+                .Include(d => d.Technician)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
             if (device == null) return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user.Id;
+            var userName = user.Email ?? "Unknown";
 
             device.IsApprovedByManager = true;
             device.ApprovedByManagerId = User.Identity.Name;
             device.ApprovedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            // Log history
+            await _historyService.LogDeviceApprovedAsync(device.Id, userId, userName);
 
             await _audit.LogAsync(
                 device.Id,
@@ -292,6 +424,11 @@ namespace DeviceManager.Controllers
                 "Approved",
                 User.Identity.Name
             );
+
+            if (device.Technician?.IdentityUserId != null)
+            {
+                await _notificationService.NotifyDeviceApprovedAsync(id, device.Technician.IdentityUserId);
+            }
 
             return RedirectToAction(nameof(PendingApproval));
         }
@@ -359,5 +496,91 @@ namespace DeviceManager.Controllers
                 "Name",
                 typeId);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveDiagnosis(int DeviceId, string Title, string Description, string Recommendation)
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.GetUserAsync(User);
+            var userName = user.Email ?? "Unknown";
+
+            var technician = await _context.Technicians
+                .FirstOrDefaultAsync(t => t.IdentityUserId == userId);
+
+            var diagnosis = new Diagnosis
+            {
+                DeviceId = DeviceId,
+                Title = Title,
+                Description = Description,
+                Recommendation = Recommendation,
+                CreatedAt = DateTime.UtcNow,
+                TechnicianId = technician?.Id
+            };
+
+            _context.Diagnoses.Add(diagnosis);
+            await _context.SaveChangesAsync();
+
+            // Log history
+            await _historyService.LogDiagnosisAddedAsync(DeviceId, userId, userName, Title);
+
+            TempData["SuccessMessage"] = "Diagnosis saved successfully!";
+            TempData["ExpandDeviceId"] = DeviceId.ToString();
+
+            return RedirectToAction("MyTasks", "Technicians");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditDiagnosis(int id, string title, string description, string recommendation)
+        {
+            var diagnosis = await _context.Diagnoses.FindAsync(id);
+            if (diagnosis == null) return NotFound();
+
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.GetUserAsync(User);
+            var userName = user.Email ?? "Unknown";
+
+            diagnosis.Title = title;
+            diagnosis.Description = description;
+            diagnosis.Recommendation = recommendation;
+
+            await _context.SaveChangesAsync();
+
+            // Log history
+            await _historyService.LogDiagnosisEditedAsync(diagnosis.DeviceId, userId, userName, title);
+
+            TempData["SuccessMessage"] = "Diagnosis updated successfully!";
+            TempData["ExpandDeviceId"] = diagnosis.DeviceId.ToString();
+
+            return RedirectToAction("MyTasks", "Technicians");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteDiagnosis(int id)
+        {
+            var diagnosis = await _context.Diagnoses.FindAsync(id);
+            if (diagnosis == null) return NotFound();
+
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.GetUserAsync(User);
+            var userName = user.Email ?? "Unknown";
+            var deviceId = diagnosis.DeviceId;
+            var title = diagnosis.Title;
+
+            _context.Diagnoses.Remove(diagnosis);
+            await _context.SaveChangesAsync();
+
+            // Log history
+            await _historyService.LogDiagnosisDeletedAsync(deviceId, userId, userName, title);
+
+            TempData["SuccessMessage"] = "Diagnosis deleted successfully!";
+            TempData["ExpandDeviceId"] = deviceId.ToString();
+
+            return RedirectToAction("MyTasks", "Technicians");
+        }
+
+
     }
 }

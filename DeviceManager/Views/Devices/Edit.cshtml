@@ -1,33 +1,24 @@
 ﻿@model DeviceManager.Models.Device
-
 @{
     ViewData["Title"] = "Edit Device";
 }
-
-<div class="container py-4"> 
+<div class="container py-4">
     <h2 class="mb-3">Edit Device</h2>
-
     <div class="card">
         <div class="card-body">
-
             <form asp-action="Edit" method="post">
-
                 <input type="hidden" asp-for="Id" />
-
                 <div class="row g-3">
-
                     <div class="col-md-6">
                         <label asp-for="Name" class="form-label"></label>
                         <input asp-for="Name" class="form-control" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
-
                     <div class="col-md-6">
                         <label asp-for="SerialNumber" class="form-label"></label>
                         <input asp-for="SerialNumber" class="form-control" />
                         <span asp-validation-for="SerialNumber" class="text-danger"></span>
                     </div>
-
                     <div class="col-md-6">
                         <label class="form-label">Device Type</label>
                         <select asp-for="DeviceTypeId"
@@ -35,7 +26,6 @@
                                 class="form-select">
                         </select>
                     </div>
-
                     <div class="col-md-6">
                         <label asp-for="Status" class="form-label"></label>
                         <select asp-for="Status" class="form-select">
@@ -43,7 +33,6 @@
                             <option value="Inactive">Inactive</option>
                         </select>
                     </div>
-
                     <div class="col-md-6">
                         <label class="form-label">Technician</label>
                         <select asp-for="TechnicianId"
@@ -52,24 +41,30 @@
                             <option value="">Unassigned</option>
                         </select>
                     </div>
-
+                    <div class="col-md-6">
+                        <label asp-for="Priority" class="form-label"></label>
+                        <select asp-for="Priority" class="form-select">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="DueDate" class="form-label">Due Date (Optional)</label>
+                        <input asp-for="DueDate" type="datetime-local" class="form-control" />
+                        <small class="text-muted">Leave empty if no deadline</small>
+                    </div>
                 </div>
-
                 <div class="mt-4 d-flex gap-2">
                     <button class="btn btn-primary">
                         Update
                     </button>
-
                     <a asp-action="Index" class="btn btn-outline-secondary">
                         Cancel
                     </a>
                 </div>
-
             </form>
-
         </div>
     </div>
-
 </div>
-
-

@@ -14,15 +14,18 @@ namespace DeviceManager.Controllers
         private readonly DeviceContext _context;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IAdminOverrideService _override;
+        private readonly INotificationService _notificationService;
 
         public ApprovalsController(
              DeviceContext context,
              UserManager<IdentityUser> userManager,
-             IAdminOverrideService overrideService)
+             IAdminOverrideService overrideService,
+             INotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
             _override = overrideService;
+            _notificationService = notificationService;
         }
 
         // GET: /Approvals
@@ -44,11 +47,13 @@ namespace DeviceManager.Controllers
         {
             var isAdminOverride =
                 User.IsInRole("Admin") && _override.IsEnabled();
-
             if (!isAdminOverride && !User.IsInRole("Manager"))
                 return Unauthorized();
 
-            var device = await _context.Devices.FindAsync(id);
+            var device = await _context.Devices
+                .Include(d => d.Technician)  // Add this to load technician
+                .FirstOrDefaultAsync(d => d.Id == id);
+
             if (device == null)
                 return NotFound();
 
@@ -57,6 +62,13 @@ namespace DeviceManager.Controllers
             device.ApprovedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            // Add notification trigger
+            if (device.Technician?.IdentityUserId != null)
+            {
+                await _notificationService.NotifyDeviceApprovedAsync(id, device.Technician.IdentityUserId);
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }

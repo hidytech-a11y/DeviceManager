@@ -13,17 +13,94 @@
     <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
     <link rel="icon" href="~/favicon-dark.png" media="(prefers-color-scheme: dark)">
 
-
     <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
-
     <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="~/favicon-16x16.png" />
-
     <link rel="apple-touch-icon" href="~/apple-touch-icon.png" />
-
     <link rel="stylesheet" href="~/css/app-theme.css" />
 
+    <style>
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
 
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .notification-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1050;
+            margin-top: 10px;
+        }
+
+            .notification-dropdown.show {
+                display: block;
+            }
+
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+            .notification-item:hover {
+                background: #f8f9fa;
+            }
+
+            .notification-item.unread {
+                background: #e8f4fd;
+            }
+
+            .notification-item .notification-title {
+                font-weight: 600;
+                margin-bottom: 4px;
+            }
+
+            .notification-item .notification-message {
+                font-size: 14px;
+                color: #666;
+            }
+
+            .notification-item .notification-time {
+                font-size: 12px;
+                color: #999;
+                margin-top: 4px;
+            }
+
+        .notification-header {
+            padding: 12px 15px;
+            border-bottom: 2px solid #007bff;
+            font-weight: 600;
+            background: #f8f9fa;
+        }
+
+        .notification-footer {
+            padding: 10px 15px;
+            text-align: center;
+            border-top: 1px solid #ddd;
+        }
+    </style>
 </head>
 
 <body>
@@ -31,17 +108,6 @@
     <nav class="top-nav"></nav>
 
     <header>
-
-       @*  @inject DeviceManager.Services.IAdminOverrideService OverrideService
-
-        @if (User.IsInRole("Admin"))
-        {
-            <div class="alert alert-warning text-center mb-0">
-                Admin Emergency Override:
-                <strong>@(OverrideService.IsEnabled() ? "ENABLED" : "DISABLED")</strong>
-            </div>
-        } *@
-
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom mb-3">
             <div class="container">
 
@@ -84,9 +150,6 @@
                                 <li class="nav-item">
                                     <a class="nav-link fw-semibold" asp-controller="Devices" asp-action="Overview">Overview</a>
                                 </li>
-
-
-                             
                             }
 
                             @* Manager menu *@
@@ -116,7 +179,7 @@
                             @if (User.Identity.IsAuthenticated)
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link  fw-semibold" asp-controller="Account" asp-action="ChangePassword"> Change Password</a>
+                                    <a class="nav-link fw-semibold" asp-controller="Account" asp-action="ChangePassword">Change Password</a>
                                 </li>
                             }
                         }
@@ -128,6 +191,28 @@
                         {
                             var user = await UserManager.GetUserAsync(User);
 
+                            <!-- Notification Bell -->
+                            <li class="nav-item me-3 position-relative">
+                                <div class="notification-bell" id="notificationBell">
+                                    <i class="bi bi-bell fs-5"></i>
+                                    <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+                                </div>
+
+                                <div class="notification-dropdown" id="notificationDropdown">
+                                    <div class="notification-header">
+                                        Notifications
+                                    </div>
+                                    <div id="notificationList">
+                                        <div class="text-center p-3 text-muted">
+                                            Loading...
+                                        </div>
+                                    </div>
+                                    <div class="notification-footer">
+                                        <a href="/Notifications/Index" class="btn btn-sm btn-outline-primary">View All</a>
+                                    </div>
+                                </div>
+                            </li>
+
                             <li class="nav-item me-4">
                                 <span class="navbar-text fw-semibold text-white">
                                     @user.Email
@@ -137,7 +222,7 @@
                             <li class="nav-item">
                                 <form method="post" asp-controller="Account" asp-action="Logout">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="fw-semibold btn btn-link nav-link p-0"> Logout </button>
+                                    <button type="submit" class="fw-semibold btn btn-link nav-link p-0">Logout</button>
                                 </form>
                             </li>
                         }
@@ -146,10 +231,6 @@
                             <li class="nav-item">
                                 <a class="nav-link fw-semibold" asp-controller="Account" asp-action="Login">Login</a>
                             </li>
-
-                           @*  <li class="nav-item">
-                                <a class="nav-link fw-semibold" asp-controller="Account" asp-action="Register">Register</a>
-                            </li> *@
                         }
                     </ul>
 
@@ -172,6 +253,105 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <script>
+            // Notification functionality
+            const bell = document.getElementById('notificationBell');
+            const dropdown = document.getElementById('notificationDropdown');
+            const badge = document.getElementById('notificationBadge');
+            const notificationList = document.getElementById('notificationList');
+
+            // Toggle dropdown
+            bell.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('show');
+                if (dropdown.classList.contains('show')) {
+                    loadNotifications();
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+
+            // Load notifications
+            async function loadNotifications() {
+                try {
+                    const response = await fetch('/Notifications/GetRecent');
+                    const notifications = await response.json();
+
+                    if (notifications.length === 0) {
+                        notificationList.innerHTML = '<div class="text-center p-3 text-muted">No notifications</div>';
+                        return;
+                    }
+
+                    notificationList.innerHTML = notifications.map(n => `
+                        <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead(${n.id}, ${n.deviceId || 'null'})">
+                            <div class="notification-title">${n.title}</div>
+                            <div class="notification-message">${n.message}</div>
+                            <div class="notification-time">${formatTime(n.createdAt)}</div>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    console.error('Error loading notifications:', error);
+                }
+            }
+
+            // Mark notification as read
+            async function markAsRead(notificationId, deviceId) {
+                try {
+                    await fetch(`/Notifications/MarkAsRead/${notificationId}`, { method: 'POST' });
+
+                    if (deviceId) {
+                        window.location.href = `/Devices/Details/${deviceId}`;
+                    } else {
+                        loadNotifications();
+                        updateBadge();
+                    }
+                } catch (error) {
+                    console.error('Error marking as read:', error);
+                }
+            }
+
+            // Update badge count
+            async function updateBadge() {
+                try {
+                    const response = await fetch('/Notifications/GetUnreadCount');
+                    const data = await response.json();
+
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error updating badge:', error);
+                }
+            }
+
+            // Format time
+            function formatTime(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = Math.floor((now - date) / 1000); // seconds
+
+                if (diff < 60) return 'Just now';
+                if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+                if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+                return date.toLocaleDateString();
+            }
+
+            // Initial load and periodic refresh
+            updateBadge();
+            setInterval(updateBadge, 30000); // Update every 30 seconds
+        </script>
+    }
 
     @await RenderSectionAsync("Scripts", required: false)
 

@@ -3,6 +3,7 @@ using System;
 using DeviceManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeviceManager.Migrations
 {
     [DbContext(typeof(DeviceContext))]
-    partial class DeviceContextModelSnapshot : ModelSnapshot
+    [Migration("20251230213157_AddNotifications")]
+    partial class AddNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.20");
@@ -105,45 +108,6 @@ namespace DeviceManager.Migrations
                     b.HasIndex("TechnicianId");
 
                     b.ToTable("Devices");
-                });
-
-            modelBuilder.Entity("DeviceManager.Models.DeviceHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("DeviceId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("NewValue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OldValue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PerformedByName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PerformedByUserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeviceId");
-
-                    b.ToTable("DeviceHistories");
                 });
 
             modelBuilder.Entity("DeviceManager.Models.DeviceType", b =>
@@ -498,17 +462,6 @@ namespace DeviceManager.Migrations
                     b.Navigation("DeviceType");
 
                     b.Navigation("Technician");
-                });
-
-            modelBuilder.Entity("DeviceManager.Models.DeviceHistory", b =>
-                {
-                    b.HasOne("DeviceManager.Models.Device", "Device")
-                        .WithMany()
-                        .HasForeignKey("DeviceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Device");
                 });
 
             modelBuilder.Entity("DeviceManager.Models.Diagnosis", b =>
