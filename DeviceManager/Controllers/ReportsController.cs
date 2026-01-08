@@ -23,22 +23,21 @@ namespace DeviceManager.Controllers
             startDate ??= DateTime.UtcNow.AddDays(-30);
             endDate ??= DateTime.UtcNow;
 
+            // Make endDate inclusive of the entire day
+            var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
+
             var technicians = await _context.Technicians.ToListAsync();
             var performances = new List<TechnicianPerformanceViewModel>();
 
             foreach (var tech in technicians)
             {
-                // Get all devices for this technician
-                var allDevices = await _context.Devices
-                    .Where(d => d.TechnicianId == tech.Id)
-                    .ToListAsync();
-
-                // Get completed devices in date range
-                var completedDevices = allDevices
-                    .Where(d => d.CompletedAt != null &&
+                // Get completed devices in date range ONLY
+                var completedDevices = await _context.Devices
+                    .Where(d => d.TechnicianId == tech.Id &&
+                                d.CompletedAt != null &&
                                 d.CompletedAt >= startDate &&
-                                d.CompletedAt <= endDate)
-                    .ToList();
+                                d.CompletedAt <= endDateInclusive)  // Changed to inclusive
+                    .ToListAsync();
 
                 // Calculate SLA metrics
                 var devicesWithDueDate = completedDevices.Where(d => d.DueDate != null).ToList();
@@ -47,25 +46,16 @@ namespace DeviceManager.Controllers
 
                 // Calculate average completion time
                 var completionTimes = completedDevices
-                    .Where(d => d.CompletedAt != null)
-                    .Select(d =>
-                    {
-                        if (d.DueDate != null)
-                        {
-                            return (d.CompletedAt!.Value - d.DueDate.Value).TotalHours;
-                        }
-                        else
-                        {
-                            // If DueDate is null, use 0 or another appropriate value
-                            return 0.0;
-                        }
-                    })
+                    .Where(d => d.CompletedAt != null && d.DueDate != null)
+                    .Select(d => Math.Abs((d.CompletedAt!.Value - d.DueDate!.Value).TotalHours))
                     .ToList();
 
                 var avgCompletionHours = completionTimes.Any() ? completionTimes.Average() : 0;
 
-                // Get current workload
-                var currentDevices = allDevices.Where(d => d.CompletedAt == null).ToList();
+                // Get current workload (NOT filtered by date - this should be current state)
+                var currentDevices = await _context.Devices
+                    .Where(d => d.TechnicianId == tech.Id && d.CompletedAt == null)
+                    .ToListAsync();
 
                 var performance = new TechnicianPerformanceViewModel
                 {
@@ -75,7 +65,7 @@ namespace DeviceManager.Controllers
                     DevicesMetSLA = metSLA,
                     DevicesMissedSLA = missedSLA,
                     SLAComplianceRate = devicesWithDueDate.Any() ? (double)metSLA / devicesWithDueDate.Count * 100 : 0,
-                    AverageCompletionHours = Math.Abs(avgCompletionHours),
+                    AverageCompletionHours = avgCompletionHours,
                     CurrentlyAssigned = currentDevices.Count,
                     InProgress = currentDevices.Count(d => d.WorkStatus == "InProgress"),
                     WaitingApproval = currentDevices.Count(d => d.WorkStatus == "Done" && !d.IsApprovedByManager),
@@ -118,12 +108,15 @@ namespace DeviceManager.Controllers
             var technician = await _context.Technicians.FindAsync(id);
             if (technician == null) return NotFound();
 
+            // Make endDate inclusive of the entire day
+            var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
+
             var devices = await _context.Devices
                 .Include(d => d.DeviceType)
                 .Where(d => d.TechnicianId == id &&
                             d.CompletedAt != null &&
                             d.CompletedAt >= startDate &&
-                            d.CompletedAt <= endDate)
+                            d.CompletedAt <= endDateInclusive)  // Changed to inclusive
                 .OrderByDescending(d => d.CompletedAt)
                 .ToListAsync();
 

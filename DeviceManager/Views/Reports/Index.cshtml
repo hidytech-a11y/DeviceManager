@@ -5,7 +5,7 @@
 }
 
 <div class="container py-4">
-    <h2 class="mb-4"> Technician Performance Reports</h2>
+    <h2 class="mb-4"> Technician Performance Reports </h2>
 
     <!-- Filters -->
     <div class="card mb-4">
@@ -13,17 +13,17 @@
             <form method="get" class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">Start Date</label>
-                    <input type="date"
-                           name="startDate"
-                           value="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                    <input type="date" 
+                           name="startDate" 
+                           value="@Model.StartDate?.ToString("yyyy-MM-dd")" 
                            class="form-control" />
                 </div>
 
                 <div class="col-md-3">
                     <label class="form-label">End Date</label>
-                    <input type="date"
-                           name="endDate"
-                           value="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                    <input type="date" 
+                           name="endDate" 
+                           value="@Model.EndDate?.ToString("yyyy-MM-dd")" 
                            class="form-control" />
                 </div>
 
@@ -51,9 +51,9 @@
         var totalCompleted = Model.TechnicianPerformances.Sum(p => p.TotalDevicesCompleted);
         var totalMetSLA = Model.TechnicianPerformances.Sum(p => p.DevicesMetSLA);
         var totalMissedSLA = Model.TechnicianPerformances.Sum(p => p.DevicesMissedSLA);
-        var overallSLA = (totalMetSLA + totalMissedSLA) > 0
-        ? (double)totalMetSLA / (totalMetSLA + totalMissedSLA) * 100
-        : 0;
+        var overallSLA = (totalMetSLA + totalMissedSLA) > 0 
+            ? (double)totalMetSLA / (totalMetSLA + totalMissedSLA) * 100 
+            : 0;
     }
 
     <div class="row mb-4">
@@ -124,13 +124,13 @@
                                 @if (rank == 1)
                                 {
                                     <span class="badge bg-warning text-dark">
-                                       #@rank
+                                         #@rank
                                     </span>
                                 }
                                 else if (rank <= 3)
                                 {
                                     <span class="badge bg-secondary">
-                                       #@rank
+                                         #@rank
                                     </span>
                                 }
                                 else
@@ -208,10 +208,11 @@
                                 }
                             </td>
                             <td>
-                                <a asp-action="TechnicianDetail"
-                                   asp-route-id="@perf.TechnicianId"
-                                   asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
-                                   asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                                <a href="@Url.Action("TechnicianDetail", "Reports", new { 
+                                       id = perf.TechnicianId, 
+                                       startDate = Model.StartDate?.ToString("yyyy-MM-dd"), 
+                                       endDate = Model.EndDate?.ToString("yyyy-MM-dd") 
+                                   })"
                                    class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i> Details
                                 </a>
