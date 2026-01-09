@@ -1,4 +1,4 @@
-# 🔧 Service Device Manager (SDM)
+# Simple Device Manager (SDM)
 
 A comprehensive ASP.NET Core MVC application for managing device repairs, tracking technician performance, and monitoring service level agreements (SLAs).
 
