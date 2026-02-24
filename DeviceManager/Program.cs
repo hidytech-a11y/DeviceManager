@@ -13,9 +13,32 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDeviceHistoryService, DeviceHistoryService>();
 
 
-// Database
+
+
+//builder.Services.AddDbContext<DeviceContext>(options =>
+//    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrWhiteSpace(databaseUrl))
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+
+    var host = uri.Host;
+    var port = uri.Port;
+    var database = uri.AbsolutePath.TrimStart('/');
+    var username = userInfo[0];
+    var password = userInfo[1];
+
+    connectionString =
+        $"Host=dpg-d6eoga3uibrs73didn30-a.oregon-postgres.render.com;Port=5432;Database=devicemanager_h33j;Username=devicemanager_h33j_user;Password=EplH2cTcZKjb8BUawAmwkehpcON46N3h;SSL Mode=Require;Trust Server Certificate=true";
+}
+
 builder.Services.AddDbContext<DeviceContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DeviceManager")));
+    options.UseNpgsql(connectionString));
 
 // Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -59,6 +82,12 @@ builder.Services.AddAuthorization(options =>
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DeviceContext>();
+    db.Database.Migrate();
+}
 
 // Middleware
 if (!app.Environment.IsDevelopment())
