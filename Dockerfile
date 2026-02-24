@@ -1,12 +1,13 @@
-﻿# Build stage
+﻿# ---------- BUILD STAGE ----------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY . .
 
-RUN dotnet publish DeviceManager/DeviceManager.csproj -c Release -o /app/publish
+RUN dotnet restore DeviceManager.csproj
+RUN dotnet publish DeviceManager.csproj -c Release -o /app/publish
 
-# Runtime stage
+# ---------- RUNTIME STAGE ----------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
