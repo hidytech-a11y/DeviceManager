@@ -172,6 +172,12 @@ namespace DeviceManager.Controllers
                 device.IsApprovedByManager = false;
             }
 
+            // 🔹 FIX: Normalize DueDate to UTC for PostgreSQL
+            if (device.DueDate.HasValue)
+            {
+                device.DueDate = DateTime.SpecifyKind(device.DueDate.Value, DateTimeKind.Utc);
+            }
+
             _context.Devices.Add(device);
             await _context.SaveChangesAsync();
 
