@@ -40,8 +40,8 @@ namespace DeviceManager.Services
             var user = await _userManager.FindByIdAsync(userId);
             if (user?.Email != null)
             {
-                //await _emailService.SendEmailAsync(user.Email, title, message);
-                Console.WriteLine($"[EMAIL] To: {user.Email}, Subject: {title}"); // Debug only
+                await _emailService.SendEmailAsync(user.Email, title, message);
+                // Console.WriteLine($"[EMAIL] To: {user.Email}, Subject: {title}"); // Debug only
             }
         }
 

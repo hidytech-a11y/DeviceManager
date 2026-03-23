@@ -1,5 +1,6 @@
 using DeviceManager.Data;
 using DeviceManager.Models;
+using DeviceManager.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,6 +63,8 @@ namespace DeviceManager.Controllers
             };
 
             return View(dashboard);
+
+
         }
     }
 }

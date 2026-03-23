@@ -6,15 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-builder.Services.AddScoped<IAuditService, AuditService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IDeviceHistoryService, DeviceHistoryService>();
-
-
-
-
 //builder.Services.AddDbContext<DeviceContext>(options =>
 //    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -40,6 +31,14 @@ if (!string.IsNullOrWhiteSpace(databaseUrl))
 builder.Services.AddDbContext<DeviceContext>(options =>
     options.UseNpgsql(connectionString));
 
+//Services for Dependency Injection
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDeviceHistoryService, DeviceHistoryService>();
+builder.Services.AddScoped<IAdminOverrideService, AdminOverrideService>();
+
+
 // Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
@@ -60,7 +59,6 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter());
 });
 
-builder.Services.AddScoped<IAdminOverrideService, AdminOverrideService>();
 
 builder.Services.AddAuthorization(options =>
 {
