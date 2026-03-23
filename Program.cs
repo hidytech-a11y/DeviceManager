@@ -10,6 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 //    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
+// Override configuration with environment variables if ijn production
+if (builder.Environment.IsProduction())
+{
+    builder.Configuration.AddEnvironmentVariables();
+}
+
+
 // Get connection string from either config or environment variable
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
@@ -27,7 +34,7 @@ if (!string.IsNullOrEmpty(connectionString))
         var username = userInfo[0];
         var password = userInfo.Length > 1 ? userInfo[1] : "";
 
-        connectionString = $"Host=ep-bitter-truth-ael6vn5q-pooler.c-2.us-east-2.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_a68YyAxkZnjb;SSL Mode=Require;Trust Server Certificate=true;";
+        connectionString = $"Host=ep-mute-pine-aj2jg4yr-pooler.c-3.us-east-2.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_vl6hugPDO8dY;SSL Mode=Require;Trust Server Certificate=true;";
     }
 }
 

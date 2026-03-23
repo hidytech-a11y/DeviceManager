@@ -26,6 +26,15 @@ namespace DeviceManager.Services
                 var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@devicemanager.com";
                 var fromName = _configuration["Email:FromName"] ?? "Device Manager";
 
+                // Add logging to debug
+                _logger.LogInformation($"Email config - Host: {smtpHost}, Port: {smtpPort}, User: {smtpUsername?.Substring(0, 3)}***");
+
+                if (string.IsNullOrEmpty(smtpUsername) || string.IsNullOrEmpty(smtpPassword))
+                {
+                    _logger.LogError("Email credentials not configured!");
+                    return;
+                }
+
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress(fromName, fromEmail));
                 message.To.Add(new MailboxAddress("", toEmail));
@@ -34,33 +43,32 @@ namespace DeviceManager.Services
                 var bodyBuilder = new BodyBuilder
                 {
                     HtmlBody = $@"
-                        <html>
-                        <head>
-                            <style>
-                                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                                .header {{ background-color: #0d6efd; color: white; padding: 20px; text-align: center; }}
-                                .content {{ padding: 20px; background-color: #f8f9fa; }}
-                                .footer {{ padding: 10px; text-align: center; font-size: 12px; color: #666; }}
-                                .button {{ background-color: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; }}
-                            </style>
-                        </head>
-                        <body>
-                            <div class='container'>
-                                <div class='header'>
-                                    <h2>Device Manager Notification</h2>
-                                </div>
-                                <div class='content'>
-                                    {body}
-                                </div>
-                                <div class='footer'>
-                                    <p>This is an automated message from Device Manager System.</p>
-                                    <p>© {DateTime.Now.Year} Device Manager. All rights reserved.</p>
-                                </div>
-                            </div>
-                        </body>
-                        </html>
-                    "
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #0d6efd; color: white; padding: 20px; text-align: center; }}
+                        .content {{ padding: 20px; background-color: #f8f9fa; }}
+                        .footer {{ padding: 10px; text-align: center; font-size: 12px; color: #666; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h2>Device Manager Notification</h2>
+                        </div>
+                        <div class='content'>
+                            {body}
+                        </div>
+                        <div class='footer'>
+                            <p>This is an automated message from Device Manager System.</p>
+                            <p>© {DateTime.Now.Year} Device Manager. All rights reserved.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            "
                 };
                 message.Body = bodyBuilder.ToMessageBody();
 
@@ -76,8 +84,10 @@ namespace DeviceManager.Services
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to send email to {toEmail}: {ex.Message}");
+                _logger.LogError($"Stack trace: {ex.StackTrace}");
                 // Don't throw - we don't want email failures to break the app
             }
         }
+    
     }
 }
