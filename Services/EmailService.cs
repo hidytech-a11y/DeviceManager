@@ -18,6 +18,9 @@ namespace DeviceManager.Services
 
         public async System.Threading.Tasks.Task SendEmailAsync(string toEmail, string subject, string body)
         {
+
+            _logger.LogWarning(" EMAIL METHOD TRIGGERED");
+
             try
             {
                 var apiKey = _configuration["Brevo:ApiKey"];
