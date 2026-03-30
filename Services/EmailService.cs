@@ -47,6 +47,8 @@ namespace DeviceManager.Services
                     htmlContent: body
                 );
 
+                _logger.LogWarning($"FROM EMAIL USED: {fromEmail}");
+
                 var response = await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
 
                 _logger.LogInformation($"Email sent via Brevo. MessageId: {response.MessageId}");
