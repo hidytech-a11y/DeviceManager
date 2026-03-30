@@ -34,7 +34,7 @@ if (!string.IsNullOrEmpty(connectionString))
         var username = userInfo[0];
         var password = userInfo.Length > 1 ? userInfo[1] : "";
 
-        connectionString = $"Host=ep-mute-pine-aj2jg4yr-pooler.c-3.us-east-2.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_vl6hugPDO8dY;SSL Mode=Require;Trust Server Certificate=true;";
+        connectionString = $"Host=ep-mute-pine-aj2jg4yr-pooler.c-3.us-east-2.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_8DptZHl6KPcY;SSL Mode=Require;Trust Server Certificate=true;";
     }
 }
 
