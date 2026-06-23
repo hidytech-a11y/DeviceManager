@@ -374,10 +374,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Idris** - Developer
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
+- GitHub: https://github.com/hidytech-a11y
+- Email: hidytech@gmail.com
 
-**Project Link**: [https://github.com/yourusername/device-manager](https://github.com/yourusername/device-manager)
+**Project Link**: [https://github.com/yourusername/device-manager](https://github.com/huidytech-a11y/device-manager)
 
 ---
 
